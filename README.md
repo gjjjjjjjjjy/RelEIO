@@ -1,7 +1,11 @@
 # RelEIO: A Reliability Benchmark for Learned Event-Inertial Odometry Under Stress
 
 Artifact for the paper *"Reliability Benchmarking of Learned Event-Inertial
-Odometry Under Sensing and Computational Stress."*
+Odometry Under Sensing and Computational Stress,"* submitted to the IEEE
+Transactions on Instrumentation and Measurement (TIM).
+
+Jiaying Guo, Zhengjie Wang, Wenxing Long, and Jun Ying (corresponding author,
+`junying@shnu.edu.cn`), Shanghai Normal University.
 
 Learned event(-inertial) odometry is usually evaluated by a single trajectory
 error on a clean benchmark sequence. **RelEIO** instead measures *reliability*:
@@ -9,9 +13,8 @@ it runs each system repeatedly under controlled sensing/computational
 degradation and reports a three-class outcome distribution with confidence
 intervals, exposing failures that a single run hides.
 
-> **Anonymized for review.** Author/affiliation information is omitted. Pretrained
-> weights and raw datasets are not redistributed; see `docs/INTEGRATION.md` for
-> how to obtain each system and dataset.
+> Pretrained weights and raw datasets are not redistributed; see
+> `docs/INTEGRATION.md` for how to obtain each system and dataset.
 
 ## What's here
 
@@ -77,6 +80,19 @@ bash scripts/run_e2vid_tartanvo.sh <sequences>
 
 Cross-system results compare **failure patterns and repeated-run reliability**,
 not absolute accuracy across these heterogeneous metrics.
+
+## Citation
+
+```bibtex
+@article{guo2026releio,
+  title   = {Reliability Benchmarking of Learned Event-Inertial Odometry
+             Under Sensing and Computational Stress},
+  author  = {Guo, Jiaying and Wang, Zhengjie and Long, Wenxing and Ying, Jun},
+  journal = {IEEE Transactions on Instrumentation and Measurement},
+  year    = {2026},
+  note    = {Under review}
+}
+```
 
 ## License
 
