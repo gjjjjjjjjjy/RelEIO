@@ -5,7 +5,9 @@ Odometry Under Sensing and Computational Stress,"* submitted to the IEEE
 Transactions on Instrumentation and Measurement (TIM).
 
 Jiaying Guo, Zhengjie Wang, Wenxing Long, and Jun Ying (corresponding author,
-`junying@shnu.edu.cn`), Shanghai Normal University.
+`junying@shnu.edu.cn`). Jiaying Guo, Wenxing Long, and Jun Ying are with Shanghai
+Normal University; Zhengjie Wang is with Westlake University and the Shanghai
+Innovation Institute (DELTA Lab).
 
 Learned event(-inertial) odometry is usually evaluated by a single trajectory
 error on a clean benchmark sequence. **RelEIO** instead measures *reliability*:
