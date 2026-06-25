@@ -1,10 +1,11 @@
-"""终稿论文图 (期刊风格, 用CSV重画). 替换初稿figures, 提升美观度.
+"""Final paper figures (journal style, redrawn from CSVs), replacing the draft figures.
 
-期刊审美: 无衬线字体, 专业配色(色盲友好), 紧凑尺寸, 矢量PDF, 一致样式.
-三类失败定义(与protocol一致): failure = crash OR MPE>100%.
+Journal aesthetics: sans-serif fonts, a professional (colour-blind-friendly)
+palette, compact sizes, vector PDF, consistent styling.
+Three-class failure definition (consistent with the protocol): failure = crash OR MPE>100%.
 
-产物: paper/figures/final_*.pdf
-用法: python script/make_final_figures.py
+Outputs: paper/figures/final_*.pdf
+Usage: python scripts/make_final_figures.py
 """
 import csv, os, math, sys
 from collections import defaultdict
@@ -18,15 +19,15 @@ apply_nature_style()
 
 DATA = "paper/data"
 OUT = "paper/figures"
-TH = 100.0  # catastrophic阈值
+TH = 100.0  # catastrophic threshold
 
 AXES = {
-    # final 口径: keep/time 用 stress-v2 _final 冻结版; patch 保留(旧但有效)
+    # Final convention: keep/time use the frozen stress-v2 _final version; patch is kept as-is.
     "keep":  ("keep_per_seed_v2_final.csv", ["1.0","0.5","0.3","0.1"], "event keep ratio"),
     "patch": ("patch_per_seed_v2_final.csv", ["96","64","32","16"], "patches / frame"),
     "time":  ("time_per_seed_v2_final.csv", ["0","1000","5000","10000"], "timestamp quant. (ms)"),
 }
-TIME_LABEL = {"0":"0","1000":"1","5000":"5","10000":"10"}  # us→ms显示
+TIME_LABEL = {"0":"0","1000":"1","5000":"5","10000":"10"}  # display us as ms
 SCENE_ORDER = [
     ("vector","desk_normal1"),("vector","corner_slow1"),("hku","vicon_dark1"),
     ("rpgdavis","boxes_6dof"),("rpgdavis","poster_6dof"),("tumvie","mocap-3d-trans"),
@@ -45,7 +46,7 @@ def load(axis):
     d = defaultdict(dict)
     with open(os.path.join(DATA, fn)) as f:
         rd = csv.DictReader(f)
-        lvlcol = ("keep" if "keep" in rd.fieldnames else ("patch" if "patch" in rd.fieldnames else "tq_us"))  # time v2 列名为 tq_us
+        lvlcol = ("keep" if "keep" in rd.fieldnames else ("patch" if "patch" in rd.fieldnames else "tq_us"))  # time v2 column is tq_us
         for r in rd:
             mpe = float(r["mpe"]) if r["mpe"] else None
             d[(r["dataset"], r["scene"], r[lvlcol])][int(r["seed"])] = (r["status"], mpe)
@@ -63,7 +64,7 @@ def level_labels(axis, levels):
 
 
 def fig_heatmap(axis):
-    """失败率热图(三类失败), 期刊风格."""
+    """Failure-rate heatmap (three failure classes), journal style."""
     d, levels = load(axis)
     M = np.full((len(SCENE_ORDER), len(levels)), np.nan)
     for i, sc in enumerate(SCENE_ORDER):
@@ -89,7 +90,7 @@ def fig_heatmap(axis):
 
 
 def fig_perseed(axis):
-    """代表序列per-seed散点(valid蓝/catastrophic橙/crash红×), log scale."""
+    """Per-seed scatter for representative sequences (valid blue / catastrophic orange / crash red x), log scale."""
     d, levels = load(axis)
     rep = [("vector","desk_normal1"),("hku","vicon_dark1"),
            ("rpgdavis","shapes_6dof"),("fpv","indoor_forward_3")]
@@ -125,7 +126,7 @@ def fig_perseed(axis):
         ax.tick_params(labelsize=7)
     axes[0].set_ylabel("MPE (%, log scale)", fontsize=8)
     fig.text(0.5, -0.06, AXES[axis][2], ha="center", fontsize=8)
-    # 统一legend(三类)放图顶
+    # Single shared legend (three classes) at the top of the figure
     handles = [h for h in [hv, hc, hx] if h is not None]
     labs = [l for h,l in zip([hv,hc,hx],["valid","catastrophic (>100%)","numerical crash"]) if h is not None]
     fig.legend(handles, labs, loc="upper center", ncol=3, fontsize=6.5,
@@ -139,7 +140,7 @@ def main():
     for axis in AXES:
         fig_heatmap(axis)
         fig_perseed(axis)
-    print(f"终稿图生成到 {OUT}/final_*.pdf:")
+    print(f"Final figures written to {OUT}/final_*.pdf:")
     for f in sorted(os.listdir(OUT)):
         if f.startswith("final_"):
             print(f"  {f}")

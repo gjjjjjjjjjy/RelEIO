@@ -1,69 +1,83 @@
-# Reliability Benchmark for Learned Event-Inertial Odometry Under Stress
+# RelEIO: A Reliability Benchmark for Learned Event-Inertial Odometry Under Stress
 
-Artifact accompanying the paper *"Reliability Benchmarking of Learned
-Event-Inertial Odometry Under Sensing and Computational Stress."* This repository
-provides the per-run records, stress operators, and reproduction scripts for the
-repeated-run reliability measurement protocol described in the paper.
+Artifact for the paper *"Reliability Benchmarking of Learned Event-Inertial
+Odometry Under Sensing and Computational Stress."*
 
-> **Anonymized for review.** Author/affiliation information and raw datasets are
-> intentionally omitted. Pretrained weights and datasets are not redistributed;
-> download instructions and preprocessing scripts are referenced in the paper.
+Learned event(-inertial) odometry is usually evaluated by a single trajectory
+error on a clean benchmark sequence. **RelEIO** instead measures *reliability*:
+it runs each system repeatedly under controlled sensing/computational
+degradation and reports a three-class outcome distribution with confidence
+intervals, exposing failures that a single run hides.
 
-## Contents
+> **Anonymized for review.** Author/affiliation information is omitted. Pretrained
+> weights and raw datasets are not redistributed; see `docs/INTEGRATION.md` for
+> how to obtain each system and dataset.
+
+## What's here
 
 ```
-records/            # per-run measurement records (one row per sequence x level x seed)
-  deio_keep.csv     #   DEIO, event-density axis (160 runs)
-  deio_time.csv     #   DEIO, timestamp-precision axis (160 runs)
-  deio_patch.csv    #   DEIO, visual-budget axis (160 runs)
-  devo.csv          #   DEVO (IMU-off ablation), event-density axis (45 runs)
-  loopclosure.csv   #   DEIO + loop-closure variant, event-density axis (60 runs)
-  rampvo.csv        #   RAMP-VO, event-density axis (15 runs)        [see note]
-  e2vid_tartanvo.csv#   E2VID+TartanVO, event-density axis (27 runs) [see note]
-stress_operators/   # the degradation operators (event density / timestamp / patch)
-  event_stress.py   #   thinning + timestamp quantization, seeded by frame timestamp
-  event_utils.py    #   voxel-grid construction
-scripts/            # recompute tables/figures from records
-  final_recompute.py
-  make_final_figures.py
-  make_paper_tables.py
-  make_crosspipeline_table.py
+records/             per-run measurement records (the benchmark data)
+  *.csv              one row per (sequence, stress level, seed); see SCHEMA.md
+  SCHEMA.md          column definitions + three-class outcome + metric note
+stress_operators/    the controlled degradation operators (the protocol core)
+  event_stress.py    event thinning + timestamp quantization (seeded by frame ts)
+  event_utils.py     event voxel-grid construction
+scripts/             per-system run scripts (.sh)
+  run_deio.sh  run_devo.sh  run_rampvo.sh  run_e2vid_tartanvo.sh
+tools/               analysis (.py): recompute the paper's tables/figures from records
+docs/
+  INTEGRATION.md     how to obtain and wire each of the four systems (reproducible)
 ```
 
-## Record schema
+## The protocol in one paragraph
 
-Each row in `records/*.csv` is one independent run:
+Three orthogonal **stress axes** perturb the input or compute budget: event
+density (keep a fraction of events), timestamp precision (quantize timestamps),
+and visual budget (number of tracked patches). Each run is classified
+**valid / numerical-crash / catastrophic-completion**. Every condition cell is
+run with `K>=5` seeds as independent processes; we report the three outcome counts
+with a Wilson confidence interval, plus median/worst-case/IQR over valid runs.
+Crucially, the degradation is **seeded by the frame timestamp, not the evaluation
+seed**, so the degraded input is bit-identical across repeated runs (verified by
+`full_stream_hash`) --- isolating degradation from estimator variability.
 
-| column | meaning |
-|---|---|
-| `dataset`, `scene` | sequence identifier |
-| `keep` / `tq_us` / `patch` | stress level on the relevant axis |
-| `seed` | evaluation seed |
-| `status` | `ok` / `crash` (numerical) ; catastrophic = `ok` with MPE > 100% |
-| `mpe` | mean position error (%), blank on numerical crash |
-| `stress_version`, `actual_keep`, `tq_changed`, `full_stream_hash` | per-run evidence: the realized degradation and a full-stream input hash, so each run's degradation is independently verifiable |
+## Reproduce the paper numbers from the released records
 
-DEIO/DEVO/loop-closure report MPE (%); RAMP-VO and E2VID+TartanVO report
-absolute trajectory error (ATE). Cross-system results compare **failure patterns
-and repeated-run reliability, not absolute accuracy** across heterogeneous metrics.
-
-## Three-class outcome
-
-Every run is classified as **valid** (completes, MPE <= 100%),
-**numerical-crash** (zero-norm quaternion / NaN), or **catastrophic-completion**
-(completes but MPE > 100%, i.e. diverged). Failure = crash + catastrophic.
-
-## Reproduce
+No GPU needed --- the records are provided.
 
 ```bash
-python scripts/final_recompute.py     # three-axis merge -> headline numbers
-python scripts/make_paper_tables.py   # regenerate tables
-python scripts/make_final_figures.py  # regenerate figures
+python tools/final_recompute.py        # headline numbers (three axes)
+python tools/make_paper_tables.py       # tables
+python tools/make_final_figures.py      # figures
+python tools/make_crosspipeline_table.py
 ```
 
-## Stress operators
+## Reproduce the runs (GPU)
 
-Degradation is seeded by the **frame timestamp**, not the evaluation seed, so for
-a fixed level the degraded input is **bit-identical across repeated runs**
-(verified by `full_stream_hash`). This isolates degradation from estimator
-variability. See `stress_operators/event_stress.py`.
+Each system must apply the RelEIO stress operators to the raw events before
+building its own representation. See **`docs/INTEGRATION.md`** for environment
+setup, known pitfalls, and the stress hook per system, then:
+
+```bash
+export DEIO_ROOT=... DATA_ROOT=...      # see INTEGRATION.md for each system's vars
+bash scripts/run_deio.sh  <sequences>
+bash scripts/run_devo.sh  <sequences>
+bash scripts/run_rampvo.sh <sequences>
+bash scripts/run_e2vid_tartanvo.sh <sequences>
+```
+
+## Systems evaluated
+
+| System | Lineage | Modality | Metric |
+|---|---|---|---|
+| DEIO (primary) | patch-tracking | event + IMU | MPE % |
+| DEVO (IMU-off ablation) | patch-tracking | event-only | MPE % |
+| RAMP-VO | patch-tracking | event + frame | ATE m |
+| E2VID + TartanVO | reconstruction + VO (non-DPVO) | event -> frames | ATE m |
+
+Cross-system results compare **failure patterns and repeated-run reliability**,
+not absolute accuracy across these heterogeneous metrics.
+
+## License
+
+MIT (see `LICENSE`).

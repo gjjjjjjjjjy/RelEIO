@@ -177,11 +177,13 @@ class EventSlicer:
     
 
 
-# voxel 切片设备: 默认 GPU(若可用)加速逐帧渲染. 算完搬回 CPU 返回(契约不变:
-# 调用方缓存 CPU tensor / 消费时自行 .cuda()). 可用 FREQVIO_VOXEL_DEVICE=cpu 强制回退.
+# Voxel rendering device: use the GPU by default (if available) to accelerate
+# per-frame rendering. Results are moved back to the CPU before returning (the
+# contract is unchanged: callers cache CPU tensors and call .cuda() themselves
+# at consumption time). Set RELEIO_VOXEL_DEVICE=cpu to force a CPU fallback.
 def _voxel_device():
     import os as _os
-    _d = _os.environ.get("FREQVIO_VOXEL_DEVICE", "")
+    _d = _os.environ.get("RELEIO_VOXEL_DEVICE", "")
     if _d:
         return torch.device(_d)
     return torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -197,8 +199,10 @@ def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_map
 
     If event stream is empty, voxel grid will be empty.
 
-    GPU 加速: 张量在 GPU 上构建/索引累加(原数值逻辑逐字不变), 算完 .cpu() 返回.
-    返回值仍是 CPU float32 tensor, 与原实现接口一致, 调用方无需改动.
+    GPU acceleration: tensors are built and index-accumulated on the GPU (the
+    numerical logic is unchanged), then moved back via .cpu() before returning.
+    The return value is still a CPU float32 tensor matching the original
+    interface, so callers need no changes.
     """
     dev = _voxel_device()
     voxel_grid = torch.zeros(nb_of_time_bins,
@@ -252,8 +256,6 @@ class RemoveHotPixelsVoxel:
     def __init__(self, num_stds=10, num_hot_pixels=None):
         self.num_stds = num_stds
         self.num_hot_pixels = num_hot_pixels
-
-    # Detect hot pixel function from Simon
     def detect_hot_pixels(self, voxel, num_hot_pixels=None, num_stds=None):
         voxel_flatten = voxel.flatten() # (2*H*W)
 
@@ -316,7 +318,7 @@ def write_evs_arr_to_h5(evs, h5outfile, xidx=0, yidx=1, tssidx=2, polidx=3, ms_s
     event_grp["t"][:] = evs[:, tssidx]
     event_grp["p"][:] = evs[:, polidx]
 
-    ms_to_idx = compute_ms_to_idx(evs[:, tssidx]*1e3,ms_start)#转为ms
+    ms_to_idx = compute_ms_to_idx(evs[:, tssidx]*1e3,ms_start)  # convert to ms
     ef_out.create_dataset('ms_to_idx', shape=len(ms_to_idx), dtype="<u8")
     ef_out["ms_to_idx"][:] = ms_to_idx
 

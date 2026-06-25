@@ -1,16 +1,19 @@
-"""跨管线(pipeline)对照表: DEIO(主) vs DEVO event-only vs loop-closure.
+"""Cross-pipeline comparison table: DEIO (main) vs DEVO event-only vs loop-closure.
 
-读三个 pipeline 的 per_seed CSV, 按 (dataset/scene, keep) 聚合 success/crash%/median/worst MPE,
-只列三者(或所选 pipeline)共同覆盖的 (序列, keep) cell, 做公平 within-cell 对照.
+Reads the per_seed CSVs of three pipelines, aggregates success / crash% / median /
+worst MPE per (dataset/scene, keep), and lists only the (sequence, keep) cells
+covered by all three (or by the selected pipelines) for a fair within-cell comparison.
 
-口径(写论文遵守):
-- DEVO = IMU-off ablation(同前端同权重), 不是独立算法.
-- 不做跨 pipeline 绝对精度排名(模态/配置不同); 只看同一 cell 下各 pipeline 的 failure 行为是否不同.
-- 退化与失败**非单调**(中间档可能比 clean 更稳), 叙述勿用单调"退化→更糟".
+Conventions (followed in the paper):
+- DEVO = IMU-off ablation (same front end, same weights), not a separate algorithm.
+- No cross-pipeline absolute-accuracy ranking (different modalities/configs); only
+  whether failure behaviour differs across pipelines within the same cell.
+- Degradation and failure are *non-monotonic* (a mid level may be more stable than
+  clean); do not describe it as a monotonic "degradation -> worse".
 
-用法:
-  python script/make_crosspipeline_table.py            # 默认读 paper/data + 跨算法 CSV
-  python script/make_crosspipeline_table.py --md out.md # 额外写 markdown 表
+Usage:
+  python scripts/make_crosspipeline_table.py            # default: read paper/data + cross-algorithm CSVs
+  python scripts/make_crosspipeline_table.py --md out.md # also write a markdown table
 """
 import argparse
 import csv
@@ -23,7 +26,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "paper", "data")
 
-# pipeline 显示名 -> CSV 路径(相对 paper/data). DEIO 主线 keep 轴无 pipeline 列, 视作 deio.
+# pipeline display name -> CSV path (relative to paper/data). The main DEIO keep axis
+# has no pipeline column, so it is treated as deio.
 SOURCES = [
     ("DEIO",          "keep_per_seed_v2_final.csv",      "deio"),
     ("DEVO(evt-only)", "devo_eventonly_per_seed_v2.csv", "eventonly"),
@@ -32,7 +36,7 @@ SOURCES = [
 
 
 def load_csv(path, pipeline_label):
-    """读一个 per_seed CSV -> dict[(ds,scene,keep)] -> list of (status, mpe)."""
+    """Read one per_seed CSV -> dict[(ds,scene,keep)] -> list of (status, mpe)."""
     rows = defaultdict(list)
     if not os.path.isfile(path):
         return rows, False
@@ -47,7 +51,7 @@ def load_csv(path, pipeline_label):
 
 
 def agg(seed_rows):
-    """一个 cell 的 (success/n, crash%, median, worst). crash = mpe is None 或 status==crash."""
+    """For one cell: (success/n, crash%, median, worst). crash = mpe is None or status==crash."""
     n = len(seed_rows)
     mpes = [m for (s, m) in seed_rows if m is not None and s != "crash"]
     nc = n - len(mpes)
@@ -58,7 +62,7 @@ def agg(seed_rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--md", default=None, help="额外写出 markdown 表到此路径")
+    ap.add_argument("--md", default=None, help="also write a markdown table to this path")
     a = ap.parse_args()
 
     loaded = []
@@ -67,14 +71,14 @@ def main():
         rows, ok = load_csv(path, pl)
         loaded.append((label, rows, ok, fname))
         print(f"[{'OK ' if ok else 'MISS'}] {label:16} <- {fname}"
-              + ("" if ok else "  (缺文件, 该pipeline列留空)"))
+              + ("" if ok else "  (file missing, this pipeline's columns left blank)"))
 
-    # 只对至少有2个pipeline覆盖的 cell 做对照(优先三者都有的). key=(ds,scene,keep).
+    # Compare only cells covered by at least 2 pipelines (preferring all three). key=(ds,scene,keep).
     all_keys = set()
     for _, rows, ok, _ in loaded:
         if ok:
             all_keys |= set(rows.keys())
-    # 排序: 按 dataset, scene, keep(降序, 1.0->0.1)
+    # Sort by dataset, scene, keep (descending, 1.0 -> 0.1)
     def keep_sort(k):
         try:
             return -float(k[2])
@@ -86,9 +90,9 @@ def main():
     for label, _, _, _ in loaded:
         headers += [f"{label}\nsucc", "crash%", "med", "worst"]
 
-    # 文本表
+    # Text table
     print("\n" + "=" * 110)
-    print("跨管线对照 (success/n | crash% | median MPE | worst MPE)  —— 同 cell within比较, 非绝对排名")
+    print("Cross-pipeline comparison (success/n | crash% | median MPE | worst MPE)  -- within-cell comparison, not absolute ranking")
     print("=" * 110)
     line = f"{'dataset/scene':22} {'keep':5}"
     for label, _, _, _ in loaded:
@@ -113,22 +117,22 @@ def main():
         md_rows.append((f"{ds}/{scene}", keep, cells))
 
     print("-" * 110)
-    print("注: cell = success/n  crash%  median/worst MPE(%). '—'=该pipeline未覆盖此cell.")
-    print("DEVO=IMU-off消融(非独立算法). 退化与失败非单调(中间档可能比clean稳).")
+    print("Note: cell = success/n  crash%  median/worst MPE(%). '-' = this pipeline does not cover this cell.")
+    print("DEVO = IMU-off ablation (not a separate algorithm). Degradation and failure are non-monotonic (a mid level may be more stable than clean).")
 
     if a.md:
         labels = [l for l, _, _, _ in loaded]
         with open(a.md, "w") as f:
-            f.write("# 跨管线对照表 (DEIO / DEVO event-only / loop-closure)\n\n")
-            f.write("> within-cell 比较(同序列同 keep 档), **非**绝对精度排名(模态/配置不同)。\n")
-            f.write("> DEVO = IMU-off 消融(同前端同权重), 非独立算法。\n")
-            f.write("> cell = success/n · crash% · median/worst MPE(%)。退化与失败**非单调**。\n\n")
+            f.write("# Cross-pipeline comparison table (DEIO / DEVO event-only / loop-closure)\n\n")
+            f.write("> Within-cell comparison (same sequence, same keep level), **not** an absolute-accuracy ranking (different modalities/configs).\n")
+            f.write("> DEVO = IMU-off ablation (same front end, same weights), not a separate algorithm.\n")
+            f.write("> cell = success/n - crash% - median/worst MPE(%). Degradation and failure are **non-monotonic**.\n\n")
             hdr = "| dataset/scene | keep | " + " | ".join(labels) + " |\n"
             sep = "|" + "---|" * (2 + len(labels)) + "\n"
             f.write(hdr); f.write(sep)
             for ds_scene, keep, cells in md_rows:
                 f.write(f"| {ds_scene} | {keep} | " + " | ".join(cells) + " |\n")
-        print(f"\n[md] 写出 {a.md}")
+        print(f"\n[md] wrote {a.md}")
 
 
 if __name__ == "__main__":

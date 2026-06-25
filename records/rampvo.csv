@@ -1,0 +1,16 @@
+pipeline,dataset,scene,keep,seed,status,ate,actual_keep,full_stream_hash
+event+frame,rpgdavis,shapes_6dof,0.1,1000,crash,,0.1000,081d5dbf7bf0f182
+event+frame,rpgdavis,shapes_6dof,0.1,1001,crash,,0.1000,081d5dbf7bf0f182
+event+frame,rpgdavis,shapes_6dof,0.1,1002,ok,0.2923,0.1000,081d5dbf7bf0f182
+event+frame,rpgdavis,shapes_6dof,0.1,1003,crash,,0.1000,081d5dbf7bf0f182
+event+frame,rpgdavis,shapes_6dof,0.1,1004,ok,0.2808,0.1000,081d5dbf7bf0f182
+event+frame,rpgdavis,shapes_6dof,0.3,1000,crash,,0.3000,9263f11e5ff051e4
+event+frame,rpgdavis,shapes_6dof,0.3,1001,ok,0.2939,0.3000,9263f11e5ff051e4
+event+frame,rpgdavis,shapes_6dof,0.3,1002,crash,,0.3000,9263f11e5ff051e4
+event+frame,rpgdavis,shapes_6dof,0.3,1003,ok,0.2908,0.3000,9263f11e5ff051e4
+event+frame,rpgdavis,shapes_6dof,0.3,1004,ok,0.2687,0.3000,9263f11e5ff051e4
+event+frame,rpgdavis,shapes_6dof,1.0,1000,ok,0.2470,1.0000,538307654dfeafd7
+event+frame,rpgdavis,shapes_6dof,1.0,1001,crash,,1.0000,538307654dfeafd7
+event+frame,rpgdavis,shapes_6dof,1.0,1002,crash,,1.0000,538307654dfeafd7
+event+frame,rpgdavis,shapes_6dof,1.0,1003,crash,,1.0000,538307654dfeafd7
+event+frame,rpgdavis,shapes_6dof,1.0,1004,crash,,1.0000,538307654dfeafd7

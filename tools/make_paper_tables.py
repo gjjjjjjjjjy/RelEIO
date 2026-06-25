@@ -1,12 +1,13 @@
-"""论文终稿表生成 (三类失败状态, 修复审计硬伤②③④).
+"""Final paper table generation (three-class failure status).
 
-替换旧的Table2/3(旧的用success/crash%, 与三类失败定义冲突).
-新表用: valid / numerical-crash / catastrophic-completion + total failure% + Wilson CI.
-归一化表用 valid-median(仅valid run), 正确处理clean基准.
-阈值敏感性: 同时输出50/100/200%下的failure计数(供正文引用真实数字).
+Replaces the old Table 2/3 (which used success/crash% and conflicted with the
+three-class failure definition).
+The new tables use: valid / numerical-crash / catastrophic-completion + total failure% + Wilson CI.
+The normalized table uses the valid-median (valid runs only) and correctly handles the clean baseline.
+Threshold sensitivity: also output failure counts at 50/100/200% (real numbers for the main text).
 
-产物: paper/tables/{,patch_,time_}T2_threeclass.tex + T3_normalized.tex + threshold_sensitivity.md
-用法: python script/make_paper_tables.py
+Outputs: paper/tables/{,patch_,time_}T2_threeclass.tex + T3_normalized.tex + threshold_sensitivity.md
+Usage: python scripts/make_paper_tables.py
 """
 import csv, os, math
 from collections import defaultdict
@@ -14,7 +15,7 @@ from collections import defaultdict
 DATA = "paper/data"
 OUT = "paper/tables"
 AXES = {
-    # final 口径: keep/time 用 stress-v2 _final 冻结版; patch 保留(旧但有效)
+    # Final convention: keep/time use the frozen stress-v2 _final version; patch is kept as-is.
     "keep":  ("keep_per_seed_v2_final.csv", ["1.0","0.5","0.3","0.1"], "keep", ""),
     "patch": ("patch_per_seed_v2_final.csv", ["96","64","32","16"], "patches", "patch_"),
     "time":  ("time_per_seed_v2_final.csv", ["0","1000","5000","10000"], r"$\tau$(ms)", "time_"),
@@ -29,7 +30,7 @@ SCENE_ORDER = [
 
 
 def load(fn):
-    """读CSV. level列名兼容: keep(keep/patch轴) 或 tq_us(time v2轴)."""
+    """Read a CSV. Level column handled flexibly: keep (keep/patch axes) or tq_us (time v2 axis)."""
     d = defaultdict(dict)
     with open(os.path.join(DATA, fn)) as f:
         rd = csv.DictReader(f)
@@ -53,7 +54,7 @@ def wilson(k, n, z=1.96):
 
 
 def cell_three(cell, th=100.0):
-    """三类: valid/crash/catastrophic. 返回dict."""
+    """Three classes: valid / crash / catastrophic. Returns a dict."""
     valid, crash, catas = [], 0, 0
     for st, m in cell.values():
         if st == "crash" or m is None: crash += 1
@@ -79,7 +80,7 @@ def lvl_disp(axis, lv):
 
 
 def make_t2(axis):
-    """三类状态主表. 10列宽 → 跨双栏table* + 缩列距, 避免撑爆/叠表."""
+    """Main three-class status table. 10 columns wide -> two-column-spanning table* with reduced column spacing to avoid overflow/overlap."""
     fn, levels, lname, pfx = AXES[axis]
     d = load(fn)
     L = [r"\begin{table*}[t]", r"\centering",
@@ -108,7 +109,7 @@ def make_t2(axis):
 
 
 def make_t3(axis):
-    """归一化表(每序列除以自己clean valid-median). 修复nan."""
+    """Normalized table (each sequence divided by its own clean valid-median), with nan handling."""
     fn, levels, lname, pfx = AXES[axis]
     d = load(fn)
     L = [r"\begin{table}[t]", r"\centering", r"\small",
@@ -136,10 +137,10 @@ def make_t3(axis):
 
 
 def threshold_sensitivity():
-    """硬伤③: 真实算50/100/200%阈值下的failure分类, 不是空声称."""
-    out = ["# 阈值敏感性 (真实重算, 硬伤③)\n",
-           "> catastrophic阈值θ取50/100/200%, 看三类failure计数是否稳健.\n",
-           "| axis | θ=50% | θ=100% | θ=200% |", "|---|---|---|---|"]
+    """Compute the failure classification at the 50/100/200% thresholds (real numbers, not a claim)."""
+    out = ["# Threshold sensitivity (real recomputation)\n",
+           "> Catastrophic threshold theta in {50, 100, 200}%; checks whether the three-class failure counts are robust.\n",
+           "| axis | theta=50% | theta=100% | theta=200% |", "|---|---|---|---|"]
     for axis, (fn, levels, _, _) in AXES.items():
         d = load(fn)
         row = [axis]
@@ -152,15 +153,16 @@ def threshold_sensitivity():
                         elif m > th: ncatas += 1
             row.append(f"crash {ncrash}, catas {ncatas}")
         out.append("| " + " | ".join(row) + " |")
-    out.append("\n→ catastrophic数随阈值变化小(灾难run多>>200%), 主失效是numerical crash, 结论稳健.")
+    out.append("\n-> The catastrophic count changes little with the threshold (catastrophic runs are mostly >>200%); the dominant failure mode is numerical crash, so the conclusion is robust.")
     rep = "\n".join(out)
     print(rep)
     open("paper/analysis/threshold_sensitivity.md", "w").write(rep)
 
 
 def make_compact_3axis():
-    """紧凑三轴汇总表: 8序列×3轴, 每cell显示该轴4档的failure%序列(如0/0/20/60).
-    一个表覆盖三轴, 替代6个跨栏大表. 放正文, 不用附件."""
+    """Compact three-axis summary table: 8 sequences x 3 axes, each cell showing the
+    failure% sequence over that axis's 4 levels (e.g. 0/0/20/60).
+    One table covers all three axes, replacing six wide spanning tables. Goes in the main text, not the appendix."""
     data = {ax: load(AXES[ax][0]) for ax in AXES}
     L = [r"\begin{table}[t]", r"\centering", r"\small",
          r"\caption{Failure rate (\%) per sequence across all three stress axes, "
@@ -185,7 +187,7 @@ def make_compact_3axis():
         L.append(f"{lab.replace('_',chr(92)+'_')} & {cells[0]} & {cells[1]} & {cells[2]} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     open(f"{OUT}/compact_3axis.tex", "w").write("\n".join(L))
-    print("紧凑三轴汇总表: compact_3axis.tex")
+    print("Compact three-axis summary table: compact_3axis.tex")
 
 
 def main():
@@ -193,7 +195,7 @@ def main():
     for axis in AXES:
         make_t2(axis); make_t3(axis)
     make_compact_3axis()
-    print("三类状态表 + 归一化表(修nan) + 紧凑三轴表\n")
+    print("Three-class status tables + normalized tables (with nan handling) + compact three-axis table\n")
     threshold_sensitivity()
 
 
