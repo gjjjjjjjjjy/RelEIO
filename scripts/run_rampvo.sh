@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-# RelEIO --- run RAMP-VO (event+frame, independently trained). Needs intensity
-# frames + events (DAVIS sequences). Isolated venv (see docs/INTEGRATION.md).
-# Degradation is injected only on the event channel; frames are untouched.
+# The actual adapter must consume scene, seed and keep.
 set -euo pipefail
-RAMPVO_ROOT=${RAMPVO_ROOT:?set RAMPVO_ROOT}; DATA_ROOT=${DATA_ROOT:?}
-SEEDS=${SEEDS:-"1000 1001 1002 1003 1004"}; KEEPS=${KEEPS:-"1.0 0.3 0.1"}
-for scene in "$@"; do for k in $KEEPS; do for s in $SEEDS; do
-  RELEIO_EVENT_KEEP=$k RELEIO_SEED=$s \
-  python "$RAMPVO_ROOT/evaluate.py" \
-    --weights "$RAMPVO_ROOT/checkpoints/RAMPVO_MultiScale.pth" \
-    --config_eval config_net/MultiScale_RPGDAVIS.json \
-    --config_VO config_vo/default.yaml --results_path "results_${scene}_k${k}_s${s}"
-done; done; done
+: "${PYTHON:?set PYTHON to the matrix-runner Python executable}"
+: "${RELEIO_COMMAND_TEMPLATE:?set the actual adapter argv template}"
+: "${RELEIO_RUN_DIR:?set a fresh experiment output directory}"
+: "${RELEIO_SEEDS:?set space-separated integer seeds or repeat IDs}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+read -r -a seeds <<< "$RELEIO_SEEDS"
+exec "$PYTHON" "$SCRIPT_DIR/run_matrix.py" --system RAMP-VO \
+  --command "$RELEIO_COMMAND_TEMPLATE" --out "$RELEIO_RUN_DIR" \
+  --axes keep --seeds "${seeds[@]}" --scenes "$@"

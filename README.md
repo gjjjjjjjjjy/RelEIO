@@ -1,101 +1,69 @@
-# RelEIO: A Reliability Benchmark for Learned Event-Inertial Odometry Under Stress
+# RelEIO: repeated-run evaluation under sensing and computational stress
 
-Artifact for the paper *"Reliability Benchmarking of Learned Event-Inertial
-Odometry Under Sensing and Computational Stress,"* submitted to the IEEE
-Transactions on Instrumentation and Measurement (TIM).
+Code and analysis tools for “Reliability Benchmarking of Learned
+Event-Inertial Odometry Under Sensing and Computational Stress”.
 
-Jiaying Guo, Zhengjie Wang, Wenxing Long, and Jun Ying (corresponding author,
-`junying@shnu.edu.cn`). Jiaying Guo, Wenxing Long, and Jun Ying are with Shanghai
-Normal University; Zhengjie Wang is with Westlake University and the Shanghai
-Innovation Institute (DELTA Lab).
+Jiaying Guo, Zhengjie Wang, Wenxing Long, and Jun Ying
+(corresponding author: junying@shnu.edu.cn).
 
-Learned event(-inertial) odometry is usually evaluated by a single trajectory
-error on a clean benchmark sequence. **RelEIO** instead measures *reliability*:
-it runs each system repeatedly under controlled sensing/computational
-degradation and reports a three-class outcome distribution with confidence
-intervals, exposing failures that a single run hides.
+Jiaying Guo, Wenxing Long and Jun Ying: College of Information, Mechanical and
+Electrical Engineering, Shanghai Normal University. Zhengjie Wang: School of
+Engineering, Westlake University, and Shanghai Innovation Institute, DELTA Lab.
 
-> Pretrained weights and raw datasets are not redistributed; see
-> `docs/INTEGRATION.md` for how to obtain each system and dataset.
+The released primary records contain 480 DEIO runs in 96 conditions, with five
+runs per condition. They describe execution outcomes of the evaluated
+implementation. Statistical tools are standard; architectural causes and
+application-level reliability require additional evidence.
 
-## What's here
+## Run locally
 
-```
-records/             per-run measurement records (the benchmark data)
-  *.csv              one row per (sequence, stress level, seed); see SCHEMA.md
-  SCHEMA.md          column definitions + three-class outcome + metric note
-stress_operators/    the controlled degradation operators (the protocol core)
-  event_stress.py    event thinning + timestamp quantization (seeded by frame ts)
-  event_utils.py     event voxel-grid construction
-scripts/             per-system run scripts (.sh)
-  run_deio.sh  run_devo.sh  run_rampvo.sh  run_e2vid_tartanvo.sh
-tools/               analysis (.py): recompute the paper's tables/figures from records
-docs/
-  INTEGRATION.md     how to obtain and wire each of the four systems (reproducible)
-```
+From the repository root, using Python 3.9 or later:
 
-## The protocol in one paragraph
-
-Three orthogonal **stress axes** perturb the input or compute budget: event
-density (keep a fraction of events), timestamp precision (quantize timestamps),
-and visual budget (number of tracked patches). Each run is classified
-**valid / numerical-crash / catastrophic-completion**. Every condition cell is
-run with `K>=5` seeds as independent processes; we report the three outcome counts
-with a Wilson confidence interval, plus median/worst-case/IQR over valid runs.
-Crucially, the degradation is **seeded by the frame timestamp, not the evaluation
-seed**, so the degraded input is bit-identical across repeated runs (verified by
-`full_stream_hash`) --- isolating degradation from estimator variability.
-
-## Reproduce the paper numbers from the released records
-
-No GPU needed --- the records are provided.
-
-```bash
-python tools/final_recompute.py        # headline numbers (three axes)
-python tools/make_paper_tables.py       # tables
-python tools/make_final_figures.py      # figures
+~~~bash
+python tools/final_recompute.py
+python tools/make_paper_tables.py
 python tools/make_crosspipeline_table.py
-```
+python tools/make_final_figures.py
+~~~
 
-## Reproduce the runs (GPU)
+The first three commands use the Python standard library. Figures require NumPy
+and Matplotlib. Input and output defaults are repository-relative, independent of
+the shell working directory. Each command also accepts explicit --records and
+--out paths. A missing or malformed input raises an error.
 
-Each system must apply the RelEIO stress operators to the raw events before
-building its own representation. See **`docs/INTEGRATION.md`** for environment
-setup, known pitfalls, and the stress hook per system, then:
+Results go to reports/: statistics.json, condition/threshold/success-curve CSVs,
+matched-system CSVs, LaTeX tables, and revised PDF/SVG figures. Figure generators
+cover the revised Fig. 1–4, S5–S6 and an empirical success curve. Other original
+supplementary figures have no generator here.
 
-```bash
-export DEIO_ROOT=... DATA_ROOT=...      # see INTEGRATION.md for each system's vars
-bash scripts/run_deio.sh  <sequences>
-bash scripts/run_devo.sh  <sequences>
-bash scripts/run_rampvo.sh <sequences>
-bash scripts/run_e2vid_tartanvo.sh <sequences>
-```
+[运行手册](docs/INTEGRATION.md) includes verified CPU commands,
+the explicit GPU adapter interface, and the external dependencies needed for model inference. [Record definitions](records/SCHEMA.md) states each statistic's population
+and limitations.
 
-## Systems evaluated
+## GPU execution and tests
 
-| System | Lineage | Modality | Metric |
-|---|---|---|---|
-| DEIO (primary) | patch-tracking | event + IMU | MPE % |
-| DEVO (IMU-off ablation) | patch-tracking | event-only | MPE % |
-| RAMP-VO | patch-tracking | event + frame | ATE m |
-| E2VID + TartanVO | reconstruction + VO (non-DPVO) | event -> frames | ATE m |
+The original external model checkouts, custom adapters, raw datasets, weights and
+full run logs are absent from this checkout. The matrix runner is tested with
+controlled processes; actual GPU models have not been rerun during this revision.
 
-Cross-system results compare **failure patterns and repeated-run reliability**,
-not absolute accuracy across these heterogeneous metrics.
+~~~bash
+python -m unittest discover -s tests -v
+~~~
 
-## Citation
+Operator tests require NumPy, PyTorch, h5py and Numba. The matrix runner records
+every process's command, exit code, stdout, stderr and wall time. A process failure
+is recorded and other independent jobs continue; the overall command exits
+nonzero if any process failed. Exit codes require diagnosis before being assigned
+a scientific outcome.
 
-```bibtex
-@article{guo2026releio,
-  title   = {Reliability Benchmarking of Learned Event-Inertial Odometry
-             Under Sensing and Computational Stress},
-  author  = {Guo, Jiaying and Wang, Zhengjie and Long, Wenxing and Ying, Jun},
-  journal = {IEEE Transactions on Instrumentation and Measurement},
-  year    = {2026},
-  note    = {Under review}
-}
-```
+## Systems and source coverage
 
-## License
+| Records | Interpretation |
+|---|---|
+| deio_keep/time/patch.csv | 480 primary DEIO runs |
+| loopclosure.csv | 60 DEIO configuration-variant runs |
+| devo.csv | 45 IMU-off runs, sharing the DEIO front-end |
+| rampvo.csv | 15 event+frame runs |
+| e2vid_tartanvo.csv | 27 reconstruction+VO records, three repeats per cell |
 
-MIT (see `LICENSE`).
+Pretrained weights and raw datasets are not redistributed. License: MIT.

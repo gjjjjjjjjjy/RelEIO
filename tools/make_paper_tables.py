@@ -1,202 +1,94 @@
-"""Final paper table generation (three-class failure status).
-
-Replaces the old Table 2/3 (which used success/crash% and conflicted with the
-three-class failure definition).
-The new tables use: valid / numerical-crash / catastrophic-completion + total failure% + Wilson CI.
-The normalized table uses the valid-median (valid runs only) and correctly handles the clean baseline.
-Threshold sensitivity: also output failure counts at 50/100/200% (real numbers for the main text).
-
-Outputs: paper/tables/{,patch_,time_}T2_threeclass.tex + T3_normalized.tex + threshold_sensitivity.md
-Usage: python scripts/make_paper_tables.py
-"""
-import csv, os, math
-from collections import defaultdict
-
-DATA = "paper/data"
-OUT = "paper/tables"
-AXES = {
-    # Final convention: keep/time use the frozen stress-v2 _final version; patch is kept as-is.
-    "keep":  ("keep_per_seed_v2_final.csv", ["1.0","0.5","0.3","0.1"], "keep", ""),
-    "patch": ("patch_per_seed_v2_final.csv", ["96","64","32","16"], "patches", "patch_"),
-    "time":  ("time_per_seed_v2_final.csv", ["0","1000","5000","10000"], r"$\tau$(ms)", "time_"),
-}
-TIME_MS = {"0":"0","1000":"1","5000":"5","10000":"10"}
-SCENE_ORDER = [
-    ("vector","desk_normal1","VECtor/desk"),("vector","corner_slow1","VECtor/corner"),
-    ("hku","vicon_dark1","HKU/dark"),("rpgdavis","boxes_6dof","DAVIS/boxes"),
-    ("rpgdavis","poster_6dof","DAVIS/poster"),("tumvie","mocap-3d-trans","TUM-VIE/mocap"),
-    ("rpgdavis","shapes_6dof","DAVIS/shapes"),("fpv","indoor_forward_3","UZH-FPV/indoor"),
-]
+#!/usr/bin/env python3
+"""Generate revised LaTeX tables from the shared descriptive analysis."""
+import argparse
+from pathlib import Path
+from analysis import AXES, OUTPUT, RECORDS, SCENES, report
 
 
-def load(fn):
-    """Read a CSV. Level column handled flexibly: keep (keep/patch axes) or tq_us (time v2 axis)."""
-    d = defaultdict(dict)
-    with open(os.path.join(DATA, fn)) as f:
-        rd = csv.DictReader(f)
-        lvlcol = ("keep" if "keep" in rd.fieldnames else ("patch" if "patch" in rd.fieldnames else "tq_us"))
-        for r in rd:
-            mpe = float(r["mpe"]) if r["mpe"] else None
-            d[(r["dataset"], r["scene"], r[lvlcol])][int(r["seed"])] = (r["status"], mpe)
-    return d
+def display(value, digits=2):
+    if value is None:
+        return "--"
+    return f"{value:.{digits}f}"
 
 
-def median(xs):
-    s = sorted(xs); n = len(s)
-    return float("nan") if n == 0 else (s[n//2] if n % 2 else (s[n//2-1]+s[n//2])/2)
-
-
-def wilson(k, n, z=1.96):
-    if n == 0: return float("nan"), float("nan")
-    p = k/n; d = 1+z*z/n
-    c = (p+z*z/(2*n))/d; h = z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d
-    return max(0,(c-h))*100, min(1,(c+h))*100
-
-
-def cell_three(cell, th=100.0):
-    """Three classes: valid / crash / catastrophic. Returns a dict."""
-    valid, crash, catas = [], 0, 0
-    for st, m in cell.values():
-        if st == "crash" or m is None: crash += 1
-        elif m > th: catas += 1
-        else: valid.append(m)
-    n = len(valid)+crash+catas
-    nfail = crash+catas
-    lo, hi = wilson(nfail, n)
-    vmed = median(valid) if valid else float("nan")
-    vwst = max(valid) if valid else float("nan")
-    def pc(q):
-        s = sorted(valid); k = len(s)
-        if k < 2: return float("nan")
-        i = q/100*(k-1); j = int(i); fr = i-j
-        return s[j] if j+1>=k else s[j]*(1-fr)+s[j+1]*fr
-    return dict(valid=len(valid), crash=crash, catas=catas, n=n,
-                fail_pct=nfail/n*100 if n else float("nan"), ci=(lo,hi),
-                vmed=vmed, vwst=vwst, iqr=(pc(75)-pc(25)) if len(valid)>=2 else float("nan"))
-
-
-def lvl_disp(axis, lv):
-    return TIME_MS[lv] if axis == "time" else lv
-
-
-def make_t2(axis):
-    """Main three-class status table. 10 columns wide -> two-column-spanning table* with reduced column spacing to avoid overflow/overlap."""
-    fn, levels, lname, pfx = AXES[axis]
-    d = load(fn)
-    L = [r"\begin{table*}[t]", r"\centering",
-         r"\setlength{\tabcolsep}{5pt}\small",
-         rf"\caption{{Three-class degradation outcomes ({axis} axis). Each cell has 5 seeds. "
-         r"V/C/X = valid / numerical-crash / catastrophic-completion ($\mathrm{MPE}>100\%$); "
-         r"fail\% = (C+X)/5 with Wilson 95\% CI; median/worst/IQR (\%) over valid runs only "
-         r"($\dagger$: $<\!3$ valid).}",
-         rf"\label{{tab:deg_{axis}}}",
-         r"\begin{tabular}{ll ccc c c ccc}", r"\toprule",
-         rf"Sequence & {lname} & V & C & X & fail\% & 95\% CI & median & worst & IQR \\", r"\midrule"]
-    for ds, sc, lab in SCENE_ORDER:
-        for i, lv in enumerate(levels):
-            s = cell_three(d.get((ds, sc, lv), {}))
-            name = lab if i == 0 else ""
-            dag = r"$^\dagger$" if s["valid"] < 3 else ""
-            med = "--" if math.isnan(s["vmed"]) else f"{s['vmed']:.2f}{dag}"
-            wst = "--" if math.isnan(s["vwst"]) else f"{s['vwst']:.2f}"
-            iqr = "--" if math.isnan(s["iqr"]) else f"{s['iqr']:.2f}"
-            ci = f"[{s['ci'][0]:.0f},{s['ci'][1]:.0f}]"
-            L.append(f"{name} & {lvl_disp(axis,lv)} & {s['valid']} & {s['crash']} & {s['catas']} "
-                     f"& {s['fail_pct']:.0f} & {ci} & {med} & {wst} & {iqr} \\\\")
-        L.append(r"\addlinespace")
-    L += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
-    open(f"{OUT}/{pfx}T2_threeclass.tex", "w").write("\n".join(L))
-
-
-def make_t3(axis):
-    """Normalized table (each sequence divided by its own clean valid-median), with nan handling."""
-    fn, levels, lname, pfx = AXES[axis]
-    d = load(fn)
-    L = [r"\begin{table}[t]", r"\centering", r"\small",
-         rf"\caption{{Normalized degradation ({axis} axis): valid-run median/worst divided by "
-         r"the sequence's own clean median; $\Delta$fail\% relative to clean. "
-         r"Reveals non-monotonic and tail behavior.}",
-         rf"\label{{tab:norm_{axis}}}",
-         r"\begin{tabular}{ll rrr}", r"\toprule",
-         rf"Seq. & {lname} & rel.med & rel.worst & $\Delta$fail\% \\", r"\midrule"]
-    for ds, sc, lab in SCENE_ORDER:
-        base = cell_three(d.get((ds, sc, levels[0]), {}))
-        bmed, bfail = base["vmed"], base["fail_pct"]
-        for i, lv in enumerate(levels):
-            s = cell_three(d.get((ds, sc, lv), {}))
-            name = lab if i == 0 else ""
-            ok = bmed == bmed and bmed > 0
-            rm = f"{s['vmed']/bmed:.2f}$\\times$" if ok and s["vmed"]==s["vmed"] else "--"
-            rw = f"{s['vwst']/bmed:.2f}$\\times$" if ok and s["vwst"]==s["vwst"] else "--"
-            df = s["fail_pct"]-bfail if bfail==bfail and s["fail_pct"]==s["fail_pct"] else float("nan")
-            ds_ = f"{df:+.0f}" if df==df else "--"
-            L.append(f"{name} & {lvl_disp(axis,lv)} & {rm} & {rw} & {ds_} \\\\")
-        L.append(r"\addlinespace")
-    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
-    open(f"{OUT}/{pfx}T3_normalized.tex", "w").write("\n".join(L))
-
-
-def threshold_sensitivity():
-    """Compute the failure classification at the 50/100/200% thresholds (real numbers, not a claim)."""
-    out = ["# Threshold sensitivity (real recomputation)\n",
-           "> Catastrophic threshold theta in {50, 100, 200}%; checks whether the three-class failure counts are robust.\n",
-           "| axis | theta=50% | theta=100% | theta=200% |", "|---|---|---|---|"]
-    for axis, (fn, levels, _, _) in AXES.items():
-        d = load(fn)
-        row = [axis]
-        for th in (50, 100, 200):
-            ncrash = ncatas = 0
-            for ds, sc, _ in SCENE_ORDER:
-                for lv in levels:
-                    for st, m in d.get((ds, sc, lv), {}).values():
-                        if st == "crash" or m is None: ncrash += 1
-                        elif m > th: ncatas += 1
-            row.append(f"crash {ncrash}, catas {ncatas}")
-        out.append("| " + " | ".join(row) + " |")
-    out.append("\n-> The catastrophic count changes little with the threshold (catastrophic runs are mostly >>200%); the dominant failure mode is numerical crash, so the conclusion is robust.")
-    rep = "\n".join(out)
-    print(rep)
-    open("paper/analysis/threshold_sensitivity.md", "w").write(rep)
-
-
-def make_compact_3axis():
-    """Compact three-axis summary table: 8 sequences x 3 axes, each cell showing the
-    failure% sequence over that axis's 4 levels (e.g. 0/0/20/60).
-    One table covers all three axes, replacing six wide spanning tables. Goes in the main text, not the appendix."""
-    data = {ax: load(AXES[ax][0]) for ax in AXES}
-    L = [r"\begin{table}[t]", r"\centering", r"\small",
-         r"\caption{Failure rate (\%) per sequence across all three stress axes, "
-         r"one value per degradation level (clean$\to$severe). Failure = numerical "
-         r"crash $+$ catastrophic completion ($\mathrm{MPE}>100\%$), 5 seeds per "
-         r"cell. The detailed event-density breakdown is in Table~\ref{tab:deg_keep}.}",
-         r"\label{tab:compact3}",
-         r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
-         r"& event density & visual budget & timestamp \\",
-         r"Sequence & {\scriptsize 1.0/.5/.3/.1} & {\scriptsize 96/64/32/16} "
-         r"& {\scriptsize 0/1/5/10\,ms} \\", r"\midrule"]
-    for ds, sc, lab in SCENE_ORDER:
-        cells = []
-        for ax in ["keep","patch","time"]:
-            levels = AXES[ax][1]; d = data[ax]
-            fr = []
-            for lv in levels:
-                cell = d.get((ds,sc,lv),{}); n=len(cell)
-                nf = sum(1 for st,m in cell.values() if st=="crash" or m is None or m>100.0)
-                fr.append(str(int(round(nf/n*100))) if n else "-")
-            cells.append("/".join(fr))
-        L.append(f"{lab.replace('_',chr(92)+'_')} & {cells[0]} & {cells[1]} & {cells[2]} \\\\")
-    L += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
-    open(f"{OUT}/compact_3axis.tex", "w").write("\n".join(L))
-    print("Compact three-axis summary table: compact_3axis.tex")
+def table(caption, label, columns, header, rows, wide=False):
+    environment = "table*" if wide else "table"
+    return "\n".join([
+        rf"\begin{{{environment}}}[t]", r"\centering\small",
+        r"\setlength{\tabcolsep}{4pt}",
+        rf"\caption{{{caption}}}", rf"\label{{{label}}}",
+        rf"\begin{{tabular}}{{{columns}}}", r"\toprule", header+r" \\",
+        r"\midrule", *[row+r" \\" for row in rows],
+        r"\bottomrule", r"\end{tabular}", rf"\end{{{environment}}}", "",
+    ])
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--records", type=Path, default=RECORDS)
+    parser.add_argument("--out", type=Path, default=OUTPUT/"tables")
+    args = parser.parse_args()
+    result = report(args.records)
+    args.out.mkdir(parents=True, exist_ok=True)
+    cells = {(r["axis"], r["dataset"], r["scene"], r["level"]): r for r in result["cells"]}
+    for axis, (_, _, levels, name) in AXES.items():
+        rows = []
+        for scene, label in SCENES.items():
+            for i, level in enumerate(levels):
+                s = cells[(axis, *scene, level)]
+                interval = f"[{100*s['failure_ci_low']:.1f}, {100*s['failure_ci_high']:.1f}]"
+                level_text = str(int(level)//1000) if axis == "time" else level
+                median = display(s["median_mpe"])
+                if s["within_threshold"] < 3:
+                    median += r"$^\dagger$"
+                rows.append(" & ".join([
+                    label if i == 0 else "", level_text, str(s["n"]), str(s["within_threshold"]),
+                    str(s["crash"]), str(s["extreme"]), f"{100*s['failure_rate']:.0f}", interval,
+                    median, display(s["worst_mpe"]), display(s["iqr_mpe"]),
+                ]))
+        caption = (name + r": observed outcomes. W/C/X denote completed within the 100\% MPE threshold, "
+                   r"numerical crash, and completed above the threshold. Failure is C+X. "
+                   r"Intervals are Wilson 95\%; median/worst/IQR use W runs only. "
+                   r"$\dagger$ marks fewer than three W runs. Timestamp levels are in ms.")
+        text = table(caption, f"tab:revised_{axis}", "llrrrrrrrrr",
+                     r"Sequence & Level & $n$ & W & C & X & Fail (\%) & 95\% CI & Median & Worst & IQR", rows, True)
+        (args.out/f"{axis}_outcomes.tex").write_text(text, encoding="utf-8")
+
+    rows = []
+    for scene, label in SCENES.items():
+        values = []
+        for axis in AXES:
+            values.append("/".join(f"{100*cells[(axis,*scene,lv)]['failure_rate']:.0f}" for lv in AXES[axis][2]))
+        rows.append(" & ".join([label, *values]))
+    caption = (r"Observed failure percentages at the four levels of each axis. "
+               r"Density: 1/.5/.3/.1; patches: 96/64/32/16; quantization: 0/1/5/10 ms. "
+               r"Five runs per cell in these released records. These curves are exploratory.")
+    (args.out/"Table1.tex").write_text(table(caption, "tab:revised_compact", "lccc",
+        "Sequence & Density & Patches & Time", rows), encoding="utf-8")
+
+    rows = []
     for axis in AXES:
-        make_t2(axis); make_t3(axis)
-    make_compact_3axis()
-    print("Three-class status tables + normalized tables (with nan handling) + compact three-axis table\n")
-    threshold_sensitivity()
+        stats = result["axes"][axis]
+        q1 = stats["q1"]
+        for i, q3 in enumerate(stats["q3"]):
+            q1text = f"{100*q1['mean_miss_fraction']:.1f} ({q1['partial_cells']} cells)" if i == 0 else ""
+            rows.append(" & ".join([AXES[axis][3] if i == 0 else "", q1text,
+                f"{q3['clean_level']} to {q3['degraded_level']}", str(q3["opposite"]),
+                str(q3["directed_pairs"]), str(q3["ties"]), display(100*q3["opposite_fraction"], 1) if q3["opposite_fraction"] is not None else "--"]))
+    caption = (r"Descriptive Q1 and Q3. Q1 is conditional on observed partial-failure cells. "
+               r"Q3 compares completed-run MPE directions with same-pool medians; ties are separate. "
+               r"Quantization levels here are in microseconds. Pair combinations reuse runs; no pair-level confidence interval is inferred.")
+    (args.out/"single_run_descriptive.tex").write_text(table(caption, "tab:revised_q", "llrrrrr",
+        r"Axis & Q1 (\%) & Comparison & Opposite & Directed & Ties & Q3 (\%)", rows, True), encoding="utf-8")
+
+    rows = [f"{AXES[r['axis']][3]} & {r['threshold_mpe']} & {r['n']} & {r['crash']} & {r['extreme']}" for r in result["threshold_sensitivity"]]
+    extreme_totals = [sum(r["extreme"] for r in result["threshold_sensitivity"] if r["threshold_mpe"] == t)
+                      for t in (50, 100, 200)]
+    (args.out/"threshold_sensitivity.tex").write_text(table(
+        rf"Threshold sensitivity. Extreme completions total {extreme_totals[0]}, {extreme_totals[1]} and {extreme_totals[2]} at 50, 100 and 200\% MPE; "
+        f"the numerical crash count is {result['totals']['crash']} throughout. Thresholds are operational, not application safety limits.",
+        "tab:revised_threshold", "lrrrr", r"Axis & Threshold (\%) & $n$ & Crashes & Extreme", rows), encoding="utf-8")
+    print(f"Tables: {args.out.resolve()}")
 
 
 if __name__ == "__main__":

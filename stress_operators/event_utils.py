@@ -177,16 +177,11 @@ class EventSlicer:
     
 
 
-# Voxel rendering device: use the GPU by default (if available) to accelerate
-# per-frame rendering. Results are moved back to the CPU before returning (the
-# contract is unchanged: callers cache CPU tensors and call .cuda() themselves
-# at consumption time). Set RELEIO_VOXEL_DEVICE=cpu to force a CPU fallback.
+# CPU is the explicit default. Select CUDA with RELEIO_VOXEL_DEVICE=cuda.
+# A requested unavailable device raises. The returned tensor is on the CPU.
 def _voxel_device():
     import os as _os
-    _d = _os.environ.get("RELEIO_VOXEL_DEVICE", "")
-    if _d:
-        return torch.device(_d)
-    return torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    return torch.device(_os.environ.get("RELEIO_VOXEL_DEVICE", "cpu"))
 
 
 def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_maps=None):
@@ -199,17 +194,31 @@ def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_map
 
     If event stream is empty, voxel grid will be empty.
 
-    GPU acceleration: tensors are built and index-accumulated on the GPU (the
-    numerical logic is unchanged), then moved back via .cpu() before returning.
-    The return value is still a CPU float32 tensor matching the original
-    interface, so callers need no changes.
+    A zero-duration window places its events in the first temporal bin. An
+    empty window is the zero tensor. CUDA accumulation is an explicit device
+    choice whose repeatability must be measured in the actual runtime.
     """
     dev = _voxel_device()
+    if H <= 0 or W <= 0 or nb_of_time_bins <= 0:
+        raise ValueError("Voxel dimensions must be positive")
+    arrays = tuple(np.asarray(a) for a in (xs, ys, ts, ps))
+    if any(a.ndim != 1 for a in arrays) or len({len(a) for a in arrays}) != 1:
+        raise ValueError("Event arrays must be one-dimensional and equally sized")
+    if any(not np.all(np.isfinite(a)) for a in arrays):
+        raise ValueError("Event arrays must contain finite values")
+    xs, ys, ts, ps = arrays
+    if np.any(ts[1:] < ts[:-1]):
+        raise ValueError("Timestamps must be nondecreasing")
+    if not np.all(np.isin(ps, [-1, 0, 1])):
+        raise ValueError("Polarity must use {-1,1} or {0,1}")
     voxel_grid = torch.zeros(nb_of_time_bins,
                           H,
                           W,
                           dtype=torch.float32,
                           device=dev)
+
+    if len(ts) == 0:
+        return voxel_grid.cpu()
 
     voxel_grid_flat = voxel_grid.flatten()
     ps = ps.astype(np.int8)
@@ -222,12 +231,22 @@ def to_voxel_grid(xs, ys, ts, ps, H=480, W=640, nb_of_time_bins=5, remapping_map
     x = features[:, 0]
     y = features[:, 1]
     polarity = features[:, 3].float()
-    t = (features[:, 2] - start_timestamp) * (nb_of_time_bins - 1) / duration  # torch.float64
-    t = t.to(torch.float64)
+    if duration == 0:
+        t = torch.zeros(len(ts), dtype=torch.float64, device=dev)
+    else:
+        t = (features[:, 2] - start_timestamp) * (nb_of_time_bins - 1) / duration
+        t = t.to(torch.float64)
 
     if remapping_maps is not None:
+        remapping_maps = np.asarray(remapping_maps)
+        if remapping_maps.shape != (2, H, W) or not np.all(np.isfinite(remapping_maps)):
+            raise ValueError("Remapping must be a finite (2,H,W) array")
+        if np.any(xs != np.floor(xs)) or np.any(ys != np.floor(ys)):
+            raise ValueError("Remapping requires integer sensor pixel coordinates")
+        if np.any(xs < 0) or np.any(xs >= W) or np.any(ys < 0) or np.any(ys >= H):
+            raise ValueError("Remapping coordinates exceed the sensor bounds")
         remapping_maps = torch.from_numpy(remapping_maps).to(dev)
-        x, y = remapping_maps[:,y,x]
+        x, y = remapping_maps[:, y.long(), x.long()]
 
     left_t, right_t = t.floor(), t.floor()+1
     left_x, right_x = x.floor(), x.floor()+1

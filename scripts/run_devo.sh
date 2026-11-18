@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# RelEIO --- run DEVO (event-only, IMU-off ablation; shares DEIO front-end).
-# Same as run_deio.sh but with the IMU factor disabled (ENABLE_IMU=False),
-# routing to the event-only tracker. See docs/INTEGRATION.md.
+# Supply the actual adapter command with its IMU factor disabled.
 set -euo pipefail
-DEIO_ROOT=${DEIO_ROOT:?}; DATA_ROOT=${DATA_ROOT:?}
-SEEDS=${SEEDS:-"1000 1001 1002 1003 1004"}; KEEPS=${KEEPS:-"1.0 0.3 0.1"}
-for scene in "$@"; do for k in $KEEPS; do for s in $SEEDS; do
-  RELEIO_EVENT_KEEP=$k \
-  python "$DEIO_ROOT/eval.py" --datapath "$DATA_ROOT" --scene "$scene" \
-    --seed "$s" --enable_event --network DEVO.pth --trials 1 \
-    --opts ENABLE_IMU False
-done; done; done
+: "${PYTHON:?set PYTHON to the matrix-runner Python executable}"
+: "${RELEIO_COMMAND_TEMPLATE:?set the actual adapter argv template}"
+: "${RELEIO_RUN_DIR:?set a fresh experiment output directory}"
+: "${RELEIO_SEEDS:?set space-separated integer seeds or repeat IDs}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+read -r -a seeds <<< "$RELEIO_SEEDS"
+exec "$PYTHON" "$SCRIPT_DIR/run_matrix.py" --system DEVO-IMU-off \
+  --command "$RELEIO_COMMAND_TEMPLATE" --out "$RELEIO_RUN_DIR" \
+  --axes keep --seeds "${seeds[@]}" --scenes "$@"
