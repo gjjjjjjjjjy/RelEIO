@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fig. 1 of the revised manuscript: the RelEIO measurement pipeline (schematic, vector).
+"""Fig. 1 of the paper: the RelEIO measurement pipeline (schematic, vector).
 
 Five stages on light cards with a numbered header, one drawing each, and a one-line caption; the figure caption
 carries the explanation. Drawn with matplotlib primitives at the final printed size (IEEE two-column width,

@@ -1,4 +1,4 @@
-# Records of the revised paper
+# Per-run records
 
 Every file is extracted from the run ledgers by the scripts in `script/diag/` and is not edited by hand.
 One row is one run unless stated otherwise. Errors are the mean position error (MPE) in percent of the
@@ -119,8 +119,3 @@ these files carry no `cell` column. The same runs with their input condition are
 | `sim3_W`, `sim3_W_scale` | error and scale of a Sim(3) fit on the window |
 | `dist_ratio_1s` | distance ratio over 1 s, as above |
 | `matched` | number of matched poses |
-
-## First submission
-
-The records of the first submission are in `first_submission/records/` with their own `SCHEMA.md`. They were made
-before the per-run ledgers existed and are not used in the revised paper.

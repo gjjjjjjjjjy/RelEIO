@@ -1,7 +1,6 @@
-# Output of, on the cluster (2026-11-21), pasted back verbatim:
+# Output of the following command on the ledger of the main matrix (2026-11-21), verbatim:
 #   python script/diag/precision_matrix.py --ledger logs/ledger/round4_core_main_all_20261121_023641 --summary-only \
 #     | sed -n '/^Input identity/,/^$/p'
-# (the cluster copy is revision/analysis/round4_input_identity_20261121.txt, untracked there)
 Input identity (fingerprint of every voxel and timestamp fed to the estimator, traced runs):
    fpv/indoor_forward_3       seeds 2000,2001,2002,2003,2004,2005,2006,2007,2008,2009: 40 runs, identical (every checkpoint reached by 2+ runs compared, deepest frame 1100); complete runs 34 (1161 frames) with 1 distinct fingerprint(s)
    fpv/indoor_forward_3 keep=0.1 tq_us=0 seeds 2000,2001,2002,2003,2004,2005,2006,2007,2008,2009: 20 runs, identical (every checkpoint reached by 2+ runs compared, deepest frame 1100); complete runs 18 (1161 frames) with 1 distinct fingerprint(s)

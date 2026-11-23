@@ -12,7 +12,7 @@
 #   orig  upstream behaviour: event packets are dropped when processing lags (only the newest unprocessed packet is
 #         kept), the solver stops on a wall-clock limit (max_solver_time 0.04 s), loop closure runs and feeds
 #         relocalisation back into the estimator, event_detector respawns. Only counted (build.sh patch, change 6).
-#   ctrl  controlled runtime configuration (D8): four scheduling-dependent settings changed together, so a difference
+#   ctrl  controlled runtime configuration: four scheduling-dependent settings changed together, so a difference
 #         to orig cannot be assigned to any single one of them, and equal repeated results would not prove the
 #         pipeline deterministic in general. Every event packet is kept
 #         (SUPEREIO_KEEP_ALL_EVENTS=1), max_solver_time 1000 s so the solver stops on max_num_iterations (8) only,
@@ -23,7 +23,7 @@
 # After the bag ends, the run waits until the odometry file has stopped growing for 15 s (ctrl may lag behind).
 # The summary counts restarts, "system reboot" (failure detection), dropped event packets, time-limited solves.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # the FreqVIO checkout: first directory with .git above this script
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # the repository checkout: first directory with .git above this script
 while [ "$ROOT" != / ] && [ ! -d "$ROOT/.git" ]; do ROOT="$(dirname "$ROOT")"; done
 [ -d "$ROOT/.git" ] || { echo "FreqVIO checkout not found above $0"; exit 1; }
 SEQ="${1:?usage: [VARIANT=orig|orig_noloop|ctrl] $0 <sequence> [tag]}"

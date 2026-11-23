@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Round 3A: does the TF32 effect extend to degraded input? (revision/DIAG_PILOT_RUNBOOK.md section 11)
+# Round 3A: does the TF32 effect extend to degraded input?
 # Pre-selected from the frozen main matrix: every degraded cell with at least 2 of 5 failures (9 cells,
 # 21 of 45 frozen runs failed), plus the clean condition of each of those 5 sequences.
 #   default            container defaults (cuBLAS matmul TF32 on through TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1)
 #   no_tf32_override   the override variable removed (= stock PyTorch numerics), code unchanged
 # 14 units x 2 arms x 10 runs (seeds 1000-1004, each twice) = 280 runs, one 8-GPU instance, about 50 min.
 #
-#   cd <FreqVIO> && timeout 60 git pull --ff-only
+#   cd <repository> && timeout 60 git pull --ff-only
 #   nohup bash script/diag/run_round3a.sh >/dev/null 2>&1 &
 #   tail -n 8 logs/runs/round3a_latest.log
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ARMS="default no_tf32_override"
 K="${K:-10}"
-# pre-selected units; frozen failures per cell (revision/data_frozen/, K=5) in the comment below
+# pre-selected units; frozen failures per cell (K=5) in the comment below
 UNITS="vector/corner_slow1@keep:0.1 vector/corner_slow1@keep:0.3 vector/corner_slow1@patch:16 vector/corner_slow1@patch:64
        fpv/indoor_forward_3@patch:64
        rpgdavis/boxes_6dof@patch:32
@@ -76,6 +76,6 @@ python script/diag/precision_matrix.py --gpus $GPUS --units $UNITS --arms $ARMS 
   --k "$K" --seeds 1000 1001 1002 1003 1004 --cholinfo --ledger "$R" || fail "stopped (see $R)"
 
 step "3/3 details"
-python script/diag/pilot_details.py --ledger "$R" --out "revision/analysis/round${TAG}_details_${STAMP}.csv" | tail -n 12
+python script/diag/pilot_details.py --ledger "$R" --out "records/round${TAG}_details_${STAMP}.csv" | tail -n 12
 echo
 echo "Round 3A finished. Ledger: $R"

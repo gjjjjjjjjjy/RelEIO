@@ -21,7 +21,7 @@ installed, tracer errors, Cholesky probe requested but not shown as enabled, tra
 untraced arm). The summary re-verifies every run and leaves control-invalid runs out of all
 counts and intervals; they stay in the ledger and are listed separately.
 
-Examples (FreqVIO root, GPU node):
+Examples (repository root, GPU node):
   python script/diag/precision_pilot.py --gpu 0 --dry-run
   python script/diag/precision_pilot.py --gpu 0 --n 1 --n-untraced 1 --cholinfo --ledger logs/ledger/smoke
   python script/diag/precision_pilot.py --gpu 0 --n 20 --n-untraced 10 --cholinfo --ledger logs/ledger/precision_pilot_4090
@@ -123,7 +123,7 @@ def build_cmd(dataset, scene, seed, split_path, opts=()):
 VOXEL_SOURCES = ("utils/event_utils.py", "utils/load_utils.py", "utils/event_stress.py")
 
 # ----------------------------------------------------------------------------- stress cells
-# A cell is one stress condition of the frozen main matrix (revision/data_frozen/DATA_FREEZE_MANIFEST.md):
+# A cell is one stress condition of the frozen main matrix:
 #   keep:<ratio>   event thinning (FREQVIO_EVENT_KEEP), as script/run_degradation_sweep.py
 #   tq:<us>        timestamp quantisation (FREQVIO_TIME_QUANT_US), as script/run_time_sweep.py
 #   patch:<n>      PATCHES_PER_FRAME via --opts, as script/run_patch_sweep.py
@@ -137,7 +137,7 @@ CLEAN_PATCHES = 96   # PATCHES_PER_FRAME in config/{vector,hku,tumvie,mvsec,uzhf
 GBIAS_SIGNS = (1.0, -1.0, 1.0)
 FROZEN_CELLS = ("keep:1.0", "keep:0.5", "keep:0.3", "keep:0.1", "tq:0", "tq:1000", "tq:5000", "tq:10000",
                 "patch:96", "patch:64", "patch:32", "patch:16")
-# New main matrix (runbook section 12): the clean condition once ("clean" = keep 1.0, tq 0, 96 patches), shared
+# New main matrix: the clean condition once ("clean" = keep 1.0, tq 0, 96 patches), shared
 # by the three axes, plus the 9 degraded levels: 10 distinct conditions per sequence.
 MAIN_CELLS = ("clean", "keep:0.5", "keep:0.3", "keep:0.1", "tq:1000", "tq:5000", "tq:10000",
               "patch:64", "patch:32", "patch:16")
@@ -318,7 +318,7 @@ def verify_controls(facts, arm, cholinfo, cell=None):
     if cell is not None:
         p += stress_problems(facts, cell, traced=arm != UNTRACED)
         # round 3+: the default arm stands for the container environment, in which cuBLAS matmul TF32
-        # is on (TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1, F12). If it is off, default and no_tf32_override
+        # is on (TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1). If it is off, default and no_tf32_override
         # are the same treatment, so the run cannot serve as the TF32-on arm.
         pol = ((nt or {}).get("precision_policy") or {})
         if arm == "default" and nt and pol and pol.get("matmul_allow_tf32") is not True:

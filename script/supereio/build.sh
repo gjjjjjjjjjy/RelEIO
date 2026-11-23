@@ -27,13 +27,13 @@
 # loop_closure both define a target called TensorRTBuffer, which a single catkin_make project rejects.
 # Binaries: outputs/supereio/ws/devel_isolated/<pkg>/lib/<pkg>/<pkg>; source ws/devel_isolated/setup.bash to run.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # the FreqVIO checkout: first directory with .git above this script
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # the repository checkout: first directory with .git above this script
 while [ "$ROOT" != / ] && [ ! -d "$ROOT/.git" ]; do ROOT="$(dirname "$ROOT")"; done
 [ -d "$ROOT/.git" ] || { echo "FreqVIO checkout not found above $0"; exit 1; }
 OUT="$ROOT/outputs/supereio"
 WS="$OUT/ws"
 SRC="$WS/src/SuperEIO"
-COMMIT=39bc15235e25f92e0427f3914a084e806029e58a   # 2026-03-22, the commit read in revision/SECOND_SYSTEM_FEASIBILITY.md
+COMMIT=39bc15235e25f92e0427f3914a084e806029e58a   # 2026-03-22, the commit that was audited
 STAMP="$(date +%Y%m%d_%H%M%S)"
 LOG="$OUT/build_${STAMP}.log"
 CHANGES="$OUT/build_changes_${STAMP}.txt"

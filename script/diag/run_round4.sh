@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Round 4: the new main matrix (revision/DIAG_PILOT_RUNBOOK.md section 12). Two designs (both pending the authors):
+# Round 4: the main matrix. Two designs:
 #   DESIGN=core (default)  8 sequences x 4 conditions (clean, keep:0.1, tq:10000, patch:16) x 10 distinct seeds
-#                          (2000-2009) x 2 settings = 640 runs, plan revision/plans/round4_core_dual_plan.json;
+#                          (2000-2009) x 2 settings = 640 runs, plan script/diag/plans/round4_core_dual_plan.json;
 #                          no key block. About 26 GPU-hours: two 8-GPU instances about 1.7 h each.
 #   DESIGN=full            the design below: 1600 + 180 runs, about 70 GPU-hours.
 #   main block  8 sequences x 10 conditions (clean, shared by the three axes, + 9 degraded levels)
@@ -11,7 +11,7 @@
 #               both settings get the same seed in every round, interleaved on the same instance
 #   key block   the 9 high-risk cells of round 3A x 20 more distinct seeds (2010-2029), no_tf32_override only
 #               = 180 runs (K=30 there for that setting)
-# Plans frozen in revision/plans/ (round4_main_dual_plan.json, round4_key_plan.json; the single-arm
+# Plans frozen in script/diag/plans/ (round4_main_dual_plan.json, round4_key_plan.json; the single-arm
 # round4_main_plan.json is kept); the run stops if the plan generated here differs.
 # First a smoke stage: one VECtor/corner keep:0.1 run per setting (seed 1999, not in the plans, own ledger);
 # every run's recorded precision settings are checked, and a wrong one stops the script.
@@ -27,8 +27,8 @@ NPARTS="${NPARTS:-1}"
 DESIGN="${DESIGN:-core}"
 MAIN_ARMS="default no_tf32_override"
 case "$DESIGN" in
-  core) MAIN_CELLS="clean keep:0.1 tq:10000 patch:16"; MAIN_PLAN=revision/plans/round4_core_dual_plan.json ;;
-  full) MAIN_CELLS="main"; MAIN_PLAN=revision/plans/round4_main_dual_plan.json ;;
+  core) MAIN_CELLS="clean keep:0.1 tq:10000 patch:16"; MAIN_PLAN=script/diag/plans/round4_core_dual_plan.json ;;
+  full) MAIN_CELLS="main"; MAIN_PLAN=script/diag/plans/round4_main_dual_plan.json ;;
   *) echo "DESIGN must be core or full"; exit 1 ;;
 esac
 KEY_ARM="no_tf32_override"
@@ -97,21 +97,21 @@ python script/diag/precision_matrix.py --gpus $GPUS --scenes $SCENES --cells $MA
   || fail "main block stopped (see $RM)"
 
 if [ "$DESIGN" = full ]; then
-  step "3/5 key block, no_tf32_override (frozen plan revision/plans/round4_key_plan.json)"
+  step "3/5 key block, no_tf32_override (frozen plan script/diag/plans/round4_key_plan.json)"
   # shellcheck disable=SC2086
   python script/diag/precision_matrix.py --gpus $GPUS --units $KEY_UNITS --k 20 --seeds $KEY_SEEDS \
-    --arms $KEY_ARM $COMMON --plan-check revision/plans/round4_key_plan.json --ledger "$RK" \
+    --arms $KEY_ARM $COMMON --plan-check script/diag/plans/round4_key_plan.json --ledger "$RK" \
     || fail "key block stopped (see $RK)"
 else
   step "3/5 key block: none in the core design"
 fi
 
 step "4/5 details"
-python script/diag/pilot_details.py --ledger "$RM" --out "revision/analysis/round4_main_${TAG}_details_${STAMP}.csv" | tail -n 8
-[ -s "$RK/ledger.jsonl" ] && python script/diag/pilot_details.py --ledger "$RK" --out "revision/analysis/round4_key_${TAG}_details_${STAMP}.csv" | tail -n 8
+python script/diag/pilot_details.py --ledger "$RM" --out "records/round4_main_${TAG}_details_${STAMP}.csv" | tail -n 8
+[ -s "$RK/ledger.jsonl" ] && python script/diag/pilot_details.py --ledger "$RK" --out "records/round4_key_${TAG}_details_${STAMP}.csv" | tail -n 8
 RKL=""; [ -s "$RK/ledger.jsonl" ] && RKL="$RK"
 # shellcheck disable=SC2086
-python script/diag/attribution_table.py --ledgers "$RM" $RKL --out "revision/analysis/round4_${TAG}_attribution_${STAMP}.csv" \
+python script/diag/attribution_table.py --ledgers "$RM" $RKL --out "records/round4_${TAG}_attribution_${STAMP}.csv" \
   | sed -n '/^TOTAL:/,$p'
 
 step "5/5 done"

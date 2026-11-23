@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cross-system IMU-bias check, DEIO side (revision/DIAG_PILOT_RUNBOOK.md section 13; design pending the authors).
+# Cross-system IMU-bias check, DEIO side.
 #   DAVIS240C boxes_6dof and poster_6dof x {clean, gbias:<GBIAS>} x 10 seeds (3000-3009), setting no_tf32_override
 #   (the container's TF32 override removed, mixed precision kept: the environment in which round 4 saw no numerical
 #   failure) = 40 runs. gbias:<d> adds a constant gyro bias of (+d, -d, +d) deg/s, given in rad/s, to the IMU array

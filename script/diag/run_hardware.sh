@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cross-hardware check (reviewer R2-11, runbook section 8) on whatever NVIDIA GPUs this instance has.
+# Cross-hardware check on whatever NVIDIA GPUs this instance has.
 # Same design as round 3A on RTX 4090, for its strongest cell and its clean control:
 #   VECtor/corner_slow1 keep:0.1 and keep:1.0, default (container TF32 override on) vs no_tf32_override,
 #   K=10 per unit and arm (seeds 1000-1004, each twice, the same arrangement as round 3A) = 40 runs.
@@ -7,7 +7,7 @@
 # input fingerprint is compared with the RTX 4090 runs of round 3A; any difference stops the script.
 #   nohup bash script/diag/run_hardware.sh >/dev/null 2>&1 &
 #
-#   cd <FreqVIO>      (no git pull while other instances are running from this directory)
+#   cd <repository>      (no git pull while other instances are running from this directory)
 #   nohup bash script/diag/run_hardware.sh >/dev/null 2>&1 &
 #   tail -f logs/runs/hardware_latest_<model>.log     (model: h200, h100, l40s, rtx ...)
 #
@@ -113,7 +113,7 @@ for cell in keep:0.1 keep:1.0; do
 done
 
 step "4/4 summary"
-python script/diag/pilot_details.py --ledger "$H" --out "revision/analysis/hardware_${TAG}_${INST}_details_${STAMP}.csv" | tail -12
+python script/diag/pilot_details.py --ledger "$H" --out "records/hardware_${TAG}_${INST}_details_${STAMP}.csv" | tail -12
 echo
 [ "$INPUT_OK" = 1 ] || fail "runs recorded in $H, but the input was not shown to match the RTX 4090 runs: do not compare the platforms"
 echo "Hardware run finished on $GPUNAME. Ledger: $H"

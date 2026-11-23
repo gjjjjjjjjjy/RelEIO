@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cross-system IMU-bias check, SuperEIO side (revision/DIAG_PILOT_RUNBOOK.md section 13).
+# Cross-system IMU-bias check, SuperEIO side.
 #   boxes_6dof and poster_6dof x {clean, gbias <GBIAS>} x K=10 runs, upstream configuration (VARIANT=orig, no
 #   CONFIG_SET) = 40 runs, about 1.6 min each (about 65 min on one GPU). The bias bag carries (+d, -d, +d) deg/s in
 #   rad/s on /dvs/imu from the first IMU message on (make_bias_bag.py, which stops unless the bag passes its checks),
@@ -12,12 +12,12 @@
 # nproc/n CPU cores per slot via taskset, thread pools capped to that block;
 # attempts dealt round-robin so every slot mixes sequences and conditions). Because upstream SuperEIO drops event
 # packets and stops solves on wall-clock time when the CPU is busy, the summary at the end compares the drop and
-# time-limit counts of the clean runs with the single-run range (runbook section 13).
+# time-limit counts of the clean runs with the single-run range.
 #   GBIAS=5 PARALLEL=8 bash script/supereio/run_imu_bias.sh
 # Two single-GPU instances, one sequence each (each still runs one attempt at a time on its own machine):
 #   GBIAS=5 SEQS=boxes_6dof bash script/supereio/run_imu_bias.sh     and on the other     GBIAS=5 SEQS=poster_6dof ...
 set -uo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # the FreqVIO checkout: first directory with .git above this script
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # the repository checkout: first directory with .git above this script
 while [ "$ROOT" != / ] && [ ! -d "$ROOT/.git" ]; do ROOT="$(dirname "$ROOT")"; done
 [ -d "$ROOT/.git" ] || { echo "FreqVIO checkout not found above $0"; exit 1; }
 cd "$ROOT"

@@ -3,9 +3,9 @@
 # re-run in the current container under two environments:
 #   default            container defaults (cuBLAS matmul TF32 on through TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1)
 #   no_tf32_override   the override variable removed (= stock PyTorch numerics), code unchanged
-# 12 cells x 8 sequences x 2 arms x 5 seeds = 960 runs. Interpretation rules: revision/DIAG_PILOT_RUNBOOK.md section 11.
+# 12 cells x 8 sequences x 2 arms x 5 seeds = 960 runs.
 #
-#   cd <FreqVIO> && timeout 60 git pull --ff-only
+#   cd <repository> && timeout 60 git pull --ff-only
 #   nohup bash script/diag/run_round3.sh >/dev/null 2>&1 &
 #   tail -n 5 logs/runs/round3_all_latest.log
 #
@@ -13,7 +13,7 @@
 #   instance i of N:  PART=i NPARTS=N nohup bash script/diag/run_round3.sh >/dev/null 2>&1 &
 #   log: logs/runs/round3_<i>of<N>_latest.log ; combined summary: precision_matrix.py --summary-only --ledger <all parts>
 # VOXCACHE: datasets whose voxels are cached (space-separated; default none). Not needed since the DAVIS
-# loader selects events by binary search (F16); every run's input fingerprint is compared in the summary.
+# loader selects events by binary search; every run's input fingerprint is compared in the summary.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 PART="${PART:-1}"
@@ -79,6 +79,6 @@ python script/diag/precision_matrix.py --gpus $GPUS --scenes $SCENES --cells fro
   --k 5 --seeds 1000 1001 1002 1003 1004 --cholinfo $VC --part "$PART/$NPARTS" --ledger "$R" || fail "stopped (see $R)"
 
 step "3/3 details"
-python script/diag/pilot_details.py --ledger "$R" --out "revision/analysis/round3_${TAG}_details_${STAMP}.csv" | tail -n 12
+python script/diag/pilot_details.py --ledger "$R" --out "records/round3_${TAG}_details_${STAMP}.csv" | tail -n 12
 echo
 echo "Round 3 part $PART of $NPARTS finished. Ledger: $R"

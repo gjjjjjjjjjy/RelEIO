@@ -4,7 +4,7 @@
 Read-only. Uses the same parsing rules as the new run ledger (run_ledger.parse_facts),
 so historical and new runs are labelled identically.
 
-Examples (from the FreqVIO root):
+Examples (from the repository root):
   # all logs under a directory, summary by outcome hint and exception site
   python3 script/diag/classify_logs.py --logs logs/sweep_v2
   # reconcile with the frozen per-run CSV (one row per dataset/scene/level/seed)
@@ -12,7 +12,7 @@ Examples (from the FreqVIO root):
   python3 script/diag/classify_logs.py --logs logs/time_sweep_v2 --csv paper/data/time_per_seed_v2_final.csv --axis tq
   python3 script/diag/classify_logs.py --logs logs/patch_sweep_v2 --csv paper/data/patch_per_seed_v2_final.csv --axis patch
   # write the per-log table
-  ... --out revision/analysis/keep_log_facts.csv
+  ... --out records/keep_log_facts.csv
 
 Reconciliation reports, per CSV row: no log found / several candidate logs / log says
 completed but CSV says crash (or the reverse) / MPE mismatch / non-numerical failure

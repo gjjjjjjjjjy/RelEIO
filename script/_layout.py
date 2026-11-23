@@ -1,9 +1,8 @@
 """Where the analysis scripts read the per-run records and write their outputs.
 
-The same script files are used in two layouts:
-  public RelEIO release      records in  records/            figures in  output/figures   tables in  output/tables
-  authors' working tree      records in  revision/analysis/  figures in  paper/figures    tables in  paper/tables
-The layout is recognised by the presence of records/ next to script/.
+With a records/ directory next to script/ (the public repository), records are read from records/ and figures
+and tables are written to output/figures and output/tables. Without it (the authors' working tree, which keeps
+the manuscript next to the code), the directories set below are used.
 """
 import os
 

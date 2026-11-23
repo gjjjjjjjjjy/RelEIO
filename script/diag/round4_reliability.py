@@ -11,8 +11,8 @@ median SE(3) MPE of completed runs, median under rule A, and runs with a small f
 The 100% line is a reference for display, not a navigation safety bound.
 
   python3 script/diag/round4_reliability.py \\
-      --outcomes revision/analysis/round4_all_attribution_20261121_023641.csv \\
-      --scores revision/analysis/deio_se3_round4_steps_20261121.csv --outdir revision/analysis
+      --outcomes records/round4_all_attribution_20261121_023641.csv \\
+      --scores records/deio_se3_round4_steps_20261121.csv --outdir records
 """
 import argparse
 import collections
@@ -131,7 +131,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--outcomes", required=True)
     ap.add_argument("--scores", required=True)
-    ap.add_argument("--outdir", default="revision/analysis")
+    ap.add_argument("--outdir", default="records")
     a = ap.parse_args()
     runs = load(a.outcomes, a.scores)
     rows = table(runs, os.path.join(a.outdir, "round4_main_table_se3.csv"))

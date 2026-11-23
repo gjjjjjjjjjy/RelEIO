@@ -4,7 +4,7 @@
 # smoke test passes its control checks, the precision pilot on every visible GPU
 # in the background.
 #
-#   cd <FreqVIO> && git pull
+#   cd <repository> && git pull
 #   nohup bash script/diag/run_pilot_all.sh >/dev/null 2>&1 &
 #   tail -f logs/runs/pilot_all_latest.log
 #

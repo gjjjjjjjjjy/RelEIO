@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-system IMU-bias check: DEIO and SuperEIO under one evaluation rule (runbook section 13). Read-only, numpy.
+"""Cross-system IMU-bias check: DEIO and SuperEIO under one evaluation rule. Read-only, numpy.
 
 One ground truth for both systems: /optitrack/davis from the bag (outputs/supereio/gt/<seq>_optitrack_davis_us.txt,
 made by script/supereio/eval_traj.py). DEIO's trajectories (runs/<id>/traj_est_tum.txt: t_us x y z qx qy qz qw, in
@@ -18,7 +18,7 @@ controls do not verify, incl. the [imu-stress] check). Errors are summarised ove
 Reading rule: a system is described as affected on a sequence only if the bias and clean MPE ranges do not overlap.
 
   python3 script/diag/cross_system_eval.py --deio-ledger logs/ledger/imu_bias_deio_<stamp> \\
-      --supereio-list outputs/supereio/imu_bias_runs_<stamp>.txt --out revision/analysis/imu_bias_cross_system.csv
+      --supereio-list outputs/supereio/imu_bias_runs_<stamp>.txt --out records/imu_bias_cross_system.csv
 """
 import argparse
 import collections

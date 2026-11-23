@@ -8,7 +8,7 @@ which of S / y / dX were finite) and whether the first Cholesky flag came before
 first detection in the log. Ends with cross-tabulations.
 
   python script/diag/pilot_details.py --ledger logs/ledger/precision_pilot_20261119_144734
-  ... --out revision/analysis/pilot_details.csv
+  ... --out records/pilot_details.csv
 """
 import argparse
 import collections

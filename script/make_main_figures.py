@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Data figures of the revised manuscript (Figs. 2, 4, 5), drawn from the committed per-run CSV files.
+"""Data figures of the paper (Figs. 2, 4, 5), drawn from the committed per-run CSV files.
 
   Fig2_numerics  (used in the supplementary) (a) numerical failures per condition, both arms, pooled over 8 sequences (Wilson 95%), with the
                      per-sequence shares as small dots; (b) the replication on four GPU models
@@ -92,7 +92,7 @@ a.legend(handles=[Line2D([], [], color=C_DEF, marker="o", ls="", ms=3.6, label="
                   Line2D([], [], color=C_OFF, marker="o", ls="", ms=3.6, label="override removed")],
          loc="upper right", fontsize=6.3, handletextpad=0.3, borderaxespad=0.2)
 panel(a, "(a)")
-# (b) four GPU models, corner_slow1: event density 0.1 and clean (F17, F18, F24)
+# (b) four GPU models, corner_slow1: event density 0.1 and clean
 allr = [r for r in one("all_rounds_attribution_*.csv") if r["scene"] == "vector/corner_slow1"]
 gpus = []
 for name, ledger in [("RTX 4090", "round3a_"), ("L40S", "hardware_l40s_"), ("H200", "hardware_h200_"), ("H100", "hardware_h100_")]:

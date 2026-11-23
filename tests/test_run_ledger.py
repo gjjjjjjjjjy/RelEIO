@@ -1,6 +1,6 @@
 """Tests for script/diag/run_ledger.py and the control checks of script/diag/precision_pilot.py.
 
-Standard library only. Run from the FreqVIO root:  python3 tests/test_run_ledger.py
+Standard library only. Run from the repository root:  python3 tests/test_run_ledger.py
 """
 import collections
 import contextlib
@@ -540,26 +540,26 @@ class StressCells(unittest.TestCase):
         pol = dict(DEF_POL, cfg_PATCHES_PER_FRAME=96, arm="default")
         self.assertEqual(P.verify_controls(_facts("no_tf32_override", pol, HALF, stress=_stress()),
                                            "no_tf32_override", False, cell="clean"), [])
-        # the frozen round-4 plans in revision/plans/ are what build_jobs produces for the launcher's arguments
+        # the frozen round-4 plans in script/diag/plans/ are what build_jobs produces for the launcher's arguments
         from script.run_degradation_sweep import DATASETS  # noqa: F401
         scenes = [tuple(x.split("/")) for x in ("vector/desk_normal1 vector/corner_slow1 hku/vicon_dark1 "
                   "tumvie/mocap-3d-trans fpv/indoor_forward_3 rpgdavis/boxes_6dof rpgdavis/poster_6dof "
                   "rpgdavis/shapes_6dof").split()]
         main = M.build_jobs(scenes, ["no_tf32_override"], 10, list(range(2000, 2010)), cells=list(P.MAIN_CELLS))
-        with open(os.path.join(ROOT, "revision", "plans", "round4_main_plan.json")) as f:
+        with open(os.path.join(ROOT, "script", "diag", "plans", "round4_main_plan.json")) as f:
             self.assertEqual(json.load(f), [list(j) for j in main])
         self.assertEqual(len(main), 800)
         self.assertEqual({len({j[3] for j in main if (j[1], j[4]) == (sc, c)}) for sc, c in {(j[1], j[4]) for j in main}}, {10})
         # the dual-arm main block (default and no_tf32_override, the same seeds) proposed 2026-11-20
         dual = M.build_jobs(scenes, ["default", "no_tf32_override"], 10, list(range(2000, 2010)), cells=list(P.MAIN_CELLS))
-        with open(os.path.join(ROOT, "revision", "plans", "round4_main_dual_plan.json")) as f:
+        with open(os.path.join(ROOT, "script", "diag", "plans", "round4_main_dual_plan.json")) as f:
             self.assertEqual(json.load(f), [list(j) for j in dual])
         self.assertEqual(len(dual), 1600)
         self.assertEqual(set(collections.Counter((j[1], j[4], j[3]) for j in dual).values()), {2})   # both arms per seed
         # the reduced dual-arm design (DESIGN=core): clean and the strongest level of each axis
         core = M.build_jobs(scenes, ["default", "no_tf32_override"], 10, list(range(2000, 2010)),
                             cells=["clean", "keep:0.1", "tq:10000", "patch:16"])
-        with open(os.path.join(ROOT, "revision", "plans", "round4_core_dual_plan.json")) as f:
+        with open(os.path.join(ROOT, "script", "diag", "plans", "round4_core_dual_plan.json")) as f:
             self.assertEqual(json.load(f), [list(j) for j in core])
         self.assertEqual(len(core), 640)
 

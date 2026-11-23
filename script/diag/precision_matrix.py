@@ -8,7 +8,7 @@ GPU pulls the next job when it is free, so every arm is spread over all GPUs and
 The same control checks as the single-GPU pilot are applied after every run; the first failed
 check, or a GPU found in use, stops all workers.
 
-Examples (FreqVIO root, GPU node):
+Examples (repository root, GPU node):
   python script/diag/precision_matrix.py --gpus 0 1 2 3 4 5 6 7 --scenes vector/desk_normal1 \\
       --arms default amp_off tf32_off fp32_strict --k 16 --seeds 1000 --cholinfo --ledger logs/ledger/round2A
   python script/diag/precision_matrix.py --summary-only --ledger logs/ledger/round2A
@@ -85,7 +85,7 @@ def front_load_inputs(jobs, cached):
 
 
 # Typical wall time of one traced run (s), for balancing parts only: round-2B medians; DAVIS after the
-# binary-search loader (F16) is an estimate. Unknown scenes count as 200 s.
+# binary-search loader is an estimate. Unknown scenes count as 200 s.
 SEQ_COST_S = {"vector/desk_normal1": 191, "vector/corner_slow1": 72, "hku/vicon_dark1": 235,
               "tumvie/mocap-3d-trans": 355, "fpv/indoor_forward_3": 95, "rpgdavis/boxes_6dof": 90,
               "rpgdavis/poster_6dof": 90, "rpgdavis/shapes_6dof": 60}

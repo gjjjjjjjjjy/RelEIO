@@ -1,6 +1,6 @@
 """
 sensor_stress.py -- physically motivated sensing-disturbance operators for the
-FreqVIO stress protocol (reviewer request: event noise, IMU bias/noise, event-IMU
+RelEIO stress protocol (event noise, IMU bias/noise, event-IMU
 time offset, burst missing measurements). Spec: docs/SENSOR_STRESS_OPERATORS.md.
 
 STANDALONE: not wired into any evaluation pipeline. Pure stdlib + numpy, Python >= 3.9.

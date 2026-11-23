@@ -3,7 +3,7 @@
 # (git-ignored). Resumes a partial download, checks the size against the server, writes <seq>.bag.sha256.
 #   bash script/supereio/fetch_bag.sh boxes_6dof [poster_6dof shapes_6dof ...]
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # the FreqVIO checkout: first directory with .git above this script
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # the repository checkout: first directory with .git above this script
 while [ "$ROOT" != / ] && [ ! -d "$ROOT/.git" ]; do ROOT="$(dirname "$ROOT")"; done
 [ -d "$ROOT/.git" ] || { echo "FreqVIO checkout not found above $0"; exit 1; }
 DIR="$ROOT/data/rosbags/rpgdavis"

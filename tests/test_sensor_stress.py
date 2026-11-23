@@ -1,6 +1,6 @@
 """Tests for utils/sensor_stress.py (stdlib unittest + numpy only; Python >= 3.9).
 
-Run:  cd FreqVIO && python3 -m unittest tests.test_sensor_stress -v
+Run from the repository root:  python3 -m unittest tests.test_sensor_stress -v
 """
 import json
 import math

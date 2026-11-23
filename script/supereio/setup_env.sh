@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# System environment for SuperEIO (the second event-inertial system, revision/DECISIONS.md D8) on a fresh
+# System environment for SuperEIO (the second event-inertial system) on a fresh
 # ngc-cuda:12.4.1-devel-ubuntu22.04 instance, as root:
 #   bash script/supereio/setup_env.sh
 #
@@ -21,7 +21,7 @@
 # Writes outputs/supereio/env_<host>_<stamp>.txt (key versions) and dpkg_versions_<host>_<stamp>.txt.
 # Exit code 0 only if every check at the end passes.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # the FreqVIO checkout: first directory with .git above this script
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # the repository checkout: first directory with .git above this script
 while [ "$ROOT" != / ] && [ ! -d "$ROOT/.git" ]; do ROOT="$(dirname "$ROOT")"; done
 [ -d "$ROOT/.git" ] || { echo "FreqVIO checkout not found above $0"; exit 1; }
 OUT="$ROOT/outputs/supereio"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Supplementary tables of the revised manuscript, generated from the committed per-run CSVs. Read-only on the data.
+"""Supplementary tables of the paper, generated from the committed per-run CSVs. Read-only on the data.
 
 Inputs (records directory, see script/_layout.py):
   round4_all_attribution_*.csv      every run of the round 4 main matrix (640) with outcome and numerical probe

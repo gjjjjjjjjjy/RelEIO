@@ -6,7 +6,7 @@
 #   cudnn_tf32_off    cuDNN TF32 off in code, matmul TF32 on
 #   ba_matmul_fp32    everything as default, except no TF32 for cuBLAS matmuls inside the visual BA call
 #
-#   cd <FreqVIO> && git pull --ff-only
+#   cd <repository> && git pull --ff-only
 #   nohup bash script/diag/run_tf32_split.sh >/dev/null 2>&1 &
 #   tail -f logs/runs/tf32_split_latest.log
 set -euo pipefail
@@ -49,6 +49,6 @@ python script/diag/precision_matrix.py --gpus $GPUS --scenes vector/desk_normal1
   --cholinfo --ledger "$C" || fail "stopped (see $C)"
 
 step "2/2 details"
-python script/diag/pilot_details.py --ledger "$C" --out "revision/analysis/round2C_details_${STAMP}.csv" | tail -12
+python script/diag/pilot_details.py --ledger "$C" --out "records/round2C_details_${STAMP}.csv" | tail -12
 echo
 echo "Round 2C finished. Ledger: $C"

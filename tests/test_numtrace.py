@@ -1,6 +1,6 @@
 """Tests for utils/numtrace.py with a stand-in estimator (CPU only, no CUDA extensions).
 
-Run from the FreqVIO root:  python tests/test_numtrace.py
+Run from the repository root:  python tests/test_numtrace.py
 """
 import contextlib
 import io

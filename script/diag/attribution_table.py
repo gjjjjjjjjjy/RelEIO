@@ -15,7 +15,7 @@ Per ledger and in total, split by whether TF32 matrix multiplication was on insi
 Wall times are of traced runs: the tracer synchronises the GPU at its checkpoints.
 
   python script/diag/attribution_table.py --ledgers logs/ledger/precision_pilot_20261119_144734 \\
-      logs/ledger/round2A_20261120_022120 ... --out revision/analysis/attribution_table.csv
+      logs/ledger/round2A_20261120_022120 ... --out records/attribution_table.csv
 """
 import argparse
 import collections

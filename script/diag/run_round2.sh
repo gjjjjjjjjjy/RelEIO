@@ -6,7 +6,7 @@
 #           -> does the default-vs-fp32 difference hold beyond VECtor/desk
 # Sets up the instance first if the probe-enabled cuda_ba is not installed (fresh instance).
 #
-#   cd <FreqVIO> && git pull
+#   cd <repository> && git pull
 #   nohup bash script/diag/run_round2.sh >/dev/null 2>&1 &
 #   tail -f logs/runs/round2_all_latest.log
 #
@@ -74,9 +74,9 @@ python script/diag/precision_matrix.py --gpus $GPUS --scenes $B_SCENES \
 step "3/3 summaries"
 if [ "$RUN_A" = 1 ]; then
   python script/diag/precision_matrix.py --summary-only --ledger "$A"
-  python script/diag/pilot_details.py --ledger "$A" --out "revision/analysis/round2A_details_${STAMP}.csv" | tail -12
+  python script/diag/pilot_details.py --ledger "$A" --out "records/round2A_details_${STAMP}.csv" | tail -12
 fi
 python script/diag/precision_matrix.py --summary-only --ledger "$B"
-python script/diag/pilot_details.py --ledger "$B" --out "revision/analysis/round2B_${TAG}_details_${STAMP}.csv" | tail -12
+python script/diag/pilot_details.py --ledger "$B" --out "records/round2B_${TAG}_details_${STAMP}.csv" | tail -12
 echo
 echo "Round 2 (PART=$PART) finished. Ledgers: $([ "$RUN_A" = 1 ] && echo "$A ")$B"

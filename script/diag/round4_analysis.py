@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Round 4 main table, by the rules fixed before the run (revision/DIAG_PILOT_RUNBOOK.md section 12). Read-only.
+"""Round 4 main table, by the rules fixed before the run. Read-only.
 
 Counted: runs whose controls verify (the same checks as the matrix summary) in the main ledger. Determinate = completed
 or numerical failure; other outcomes are listed, never counted as successes. Per condition (sequence x cell) and arm:
@@ -19,7 +19,7 @@ Detection: with independent runs and a per-run failure probability of 10%, K run
 probability 1 - 0.9^K (K = 10: 65.1%). This is a detection statement, not the precision of a rate.
 
   python script/diag/round4_analysis.py --ledger logs/ledger/round4_core_main_all_20261121_023641 \\
-      --out revision/analysis/round4_main_table.csv
+      --out records/round4_main_table.csv
 MPE in the ledger is DEIO's own evaluation (Sim(3) fitted on the first 1000 associated poses, error over all of them);
 see script/supereio/eval_traj.py for why that rule is not used across systems.
 """

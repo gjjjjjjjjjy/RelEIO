@@ -3,7 +3,7 @@
 
 DEIO's own MPE (utils/eval_utils.py, _n_to_align=1000) fits Sim(3) on the first 1000 associated poses. On short
 hand-held sequences a diverging trajectory can then be shrunk towards one point (scale near 0), and the error
-approaches the spread of the ground truth around its mean, whatever the estimate (F22, F25). This script repeats
+approaches the spread of the ground truth around its mean, whatever the estimate. This script repeats
 DEIO's rule and adds rules that cannot hide a wrong scale, per completed run:
 Changing one thing at a time, from DEIO's rule to the scale-free rule (error over all matched poses / full path):
   A deio_rule      Sim(3) fitted on the first 1000 poses, matching within 1 s (evo, as DEIO)
@@ -23,7 +23,7 @@ of the trajectory (rows t_us x y z qx qy qz qw):
 DEIO's rule fits on the first 1000 poses for every dataset except UZH-FPV, where it uses all (_n_to_align=-1).
 
   python3 script/diag/deio_se3_eval.py --ledgers logs/ledger/round4_core_main_all_20261121_023641 \\
-      [--scenes rpgdavis/boxes_6dof vector/desk_normal1 ...] [--out revision/analysis/deio_se3_round4.csv]
+      [--scenes rpgdavis/boxes_6dof vector/desk_normal1 ...] [--out records/deio_se3_round4.csv]
 """
 import argparse
 import collections

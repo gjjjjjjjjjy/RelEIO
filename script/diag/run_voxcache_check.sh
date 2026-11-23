@@ -3,7 +3,7 @@
 # GPUs 0-3: no cache (2 runs per scene); GPUs 4-7: cache in a fresh namespace tied to the voxel code
 # (4 runs per scene; the first builds the cache, the others wait for it and load it). Same ledger, so the
 # summary compares the input fingerprints of all runs of a scene. Needs 8 GPUs.
-#   cd <FreqVIO> && git pull --ff-only
+#   cd <repository> && git pull --ff-only
 #   nohup bash script/diag/run_voxcache_check.sh >/dev/null 2>&1 &
 #   tail -f logs/runs/voxcache_check_latest.log
 set -euo pipefail
