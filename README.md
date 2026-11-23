@@ -17,7 +17,7 @@ Python 3.9 or later, standard library only:
 python3 script/headline_numbers.py
 ```
 
-The script recomputes 48 quantities from the records and prints each next to the value stated in the paper; it exits
+The script recomputes 87 quantities from the records and prints each next to the value stated in the paper; it exits
 with status 1 if any differs. Among them:
 
 | Result | Value | Records |
@@ -27,6 +27,8 @@ with status 1 if any differs. Among them:
 | Runs that pass rule A and fail rule D at 10% / the reverse | 86 / 0 | same |
 | Runs above the path length under rules A, C, D | 3, 0, 69 | same |
 | Crashes with / without the override on three further GPU models (L40S, H200, H100) | 10/20, 10/20, 11/20 / 0/20 each | `hardware_*_details_*.csv` |
+| Precision switches (Table III): crashes with TF32 matrix multiplication on / off inside the bundle adjustment | 8/16, 8/16 / 0/16, 0/16, 0/16 | `all_rounds_attribution_*.csv` |
+| Four GPU models under reduced event density / clean input, with the override (Table S3) | 33/40 / 7/40; 0/40 without it | same |
 
 ## Regenerate the figures and tables
 
@@ -48,9 +50,9 @@ python3 script/diag/make_supp_tables.py  # Tables S4-S8 and S10, and the numbers
 | Fig. 2 | `output/figs/round4_reliability.pdf` | main matrix, all 640 runs |
 | Fig. 3 | `output/figures/Fig4_scoring.pdf` | 320 override-removed runs, rules A and D |
 | Fig. 4 | `output/figures/Fig5_bias.pdf` | gyroscope-bias runs of DEIO and SuperEIO |
-| Fig. S1 | `output/figures/Fig2_numerics.pdf` | main matrix; panel (b) see *Coverage* |
+| Fig. S1 | `output/figures/Fig2_numerics.pdf` | main matrix; panel (b): round 3A and the three replication ledgers |
 | Fig. S2, S3 | `output/figures/FigS1_*.pdf`, `FigS2_*.pdf` | main matrix |
-| Table IV | printed by `script/headline_numbers.py` | main matrix |
+| Tables III, IV, S1-S3 | printed and checked by `script/headline_numbers.py` | all rounds |
 | Tables S4-S8, S10 | `output/tables/supp_*.tex` | main matrix, bias runs |
 
 The file names carry the figure numbers of an earlier draft; the table above gives the numbers of the paper.
@@ -74,17 +76,17 @@ The file names carry the figure numbers of an earlier draft; the table above giv
 
 What can be recomputed from this repository alone, and what cannot:
 
-- **From the records here:** every number of the main matrix (crashes, reliability under rules A-D, Table IV, the
-  paired comparison of the arms, where the crashes start), the supplementary tables S4-S8 and S10, Figs. 2-4 and
-  S1(a)-S3, the totals per GPU and arm of the replication on three further GPU models, and the gyroscope-bias
-  results.
+- **From the records here:** every DEIO run of the study (1412 runs in ten ledgers: the diagnostic rounds, the
+  precision-switch matrix, round 3A, the main matrix, the replication on three further GPU models, and DEIO's
+  side of the bias experiment) and the SuperEIO runs of the bias experiment. This covers the crash counts of
+  every round and arm (Tables III and S1-S3), every number of the main matrix (reliability under rules A-D,
+  Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S4-S8 and S10,
+  and all figures.
 - **Not included in this release:** the raw run ledgers (one directory per run with the request, the recorded
   environment, the input fingerprints, the tracer output, the log, and the trajectory), from which the records
-  were extracted with the scripts above; and the per-run records of the diagnostic rounds, of the precision-switch
-  matrix (Table III), of round 3A on the RTX 4090, and of the single SuperEIO runs (Tables S1-S3 and S9). Those
-  tables report counts taken from the ledgers. The split of each GPU's failures into the two input conditions in
-  Fig. S1(b) and Table S3 comes from the same ledgers; the per-GPU records here carry no condition label, so the
-  figure script holds that split as constants and checks only the totals against the records.
+  were extracted with the scripts above; two small checks of Table S1 that are outside the extracted records (the
+  eight untraced runs of round 1 and the voxel-cache check); and the logs of the single SuperEIO runs on clean
+  input, which Table S9 summarizes.
 - **The estimator is not included.** The launchers run inside a checkout of DEIO with our data-loading layer and
   with the probe hooks that call `utils/numtrace.py`; the supplementary material (Section S2) describes its
   differences from the upstream code. Network weights and datasets are not redistributed.

@@ -7,9 +7,8 @@
   Fig5_bias      every run of the common-gyroscope-bias experiment, both systems, two sequences
 
 Inputs (records directory, see script/_layout.py): round4_all_attribution_*.csv, deio_se3_round4_steps_*.csv,
-imu_bias_cross_system_pinned_*.csv, hardware_*_details_*.csv. In Fig. 2(b) the split of each GPU's failures into
-the two input conditions is taken from the run ledgers of the hardware replication; the per-GPU CSVs carry no
-condition label, so only the totals per GPU and arm are checked against them here.
+imu_bias_cross_system_pinned_*.csv, all_rounds_attribution_*.csv (every DEIO run of every round, with ledger and
+input condition; Fig. 2(b) uses its round 3A runs on the RTX 4090 and the three hardware-replication ledgers).
 
   python3 script/make_main_figures.py          # writes Fig{2,4,5}_*.pdf/.png into the figures directory
 """
@@ -94,12 +93,18 @@ a.legend(handles=[Line2D([], [], color=C_DEF, marker="o", ls="", ms=3.6, label="
          loc="upper right", fontsize=6.3, handletextpad=0.3, borderaxespad=0.2)
 panel(a, "(a)")
 # (b) four GPU models, corner_slow1: event density 0.1 and clean (F17, F18, F24)
-gpus = [("RTX 4090", 8, 1), ("L40S", 9, 1), ("H200", 7, 3), ("H100", 9, 2)]
-for tag, name in [("l40s", "L40S"), ("h200", "H200"), ("h100", "H100")]:      # totals per GPU and arm, from the records
-    hw = one("hardware_%s_*_details_*.csv" % tag)
-    fails = collections.Counter(r["arm"] for r in hw if r["outcome"].startswith("numerical_failure"))
-    kd, kc = [(a, b) for g, a, b in gpus if g == name][0]
-    assert len(hw) == 40 and fails["default"] == kd + kc and fails["no_tf32_override"] == 0, (name, fails)
+allr = [r for r in one("all_rounds_attribution_*.csv") if r["scene"] == "vector/corner_slow1"]
+gpus = []
+for name, ledger in [("RTX 4090", "round3a_"), ("L40S", "hardware_l40s_"), ("H200", "hardware_h200_"), ("H100", "hardware_h100_")]:
+    k = {}
+    for cell in ("keep:0.1", "keep:1.0"):                       # reduced event density, clean
+        for arm in ("default", "no_tf32_override"):
+            g = [r for r in allr if r["ledger"].startswith(ledger) and r["cell"] == cell and r["arm"] == arm]
+            assert len(g) == 10, (name, cell, arm, len(g))
+            k[cell, arm] = sum(r["outcome"].startswith("numerical_failure") for r in g)
+    assert k["keep:0.1", "no_tf32_override"] == 0 and k["keep:1.0", "no_tf32_override"] == 0, (name, k)
+    gpus.append((name, k["keep:0.1", "default"], k["keep:1.0", "default"]))
+assert gpus == [("RTX 4090", 8, 1), ("L40S", 9, 1), ("H200", 7, 3), ("H100", 9, 2)], gpus   # supplementary Table S3
 y = np.arange(len(gpus))[::-1]
 for yy, (g, kd, kc) in zip(y, gpus):
     b.plot([0, kd], [yy + 0.13] * 2, color=C_DEF, lw=2.2, solid_capstyle="butt")

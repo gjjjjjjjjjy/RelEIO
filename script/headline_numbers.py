@@ -5,6 +5,7 @@ Standard library only. Reads the records directory (see script/_layout.py):
   round4_all_attribution_*.csv         every run of the main matrix (640): arm, input condition, sequence, outcome
   deio_se3_round4_steps_*.csv          every completed run (592) scored under rules A-D
   hardware_*_details_*.csv             the replication runs on three further GPU models (40 runs each)
+  all_rounds_attribution_*.csv         every DEIO run of every round (1412), with its ledger and input condition
   imu_bias_cross_system_pinned_*.csv   the common-gyroscope-bias runs of DEIO and SuperEIO (80)
 
 Arms: "default" is the container default (TF32 override set), "no_tf32_override" is the override removed.
@@ -142,6 +143,57 @@ for tag, name, paper in [("l40s", "L40S", 10), ("h200", "H200", 10), ("h100", "H
     n = collections.Counter(r["arm"] for r in hw)
     check("%s: crashes default / override removed" % name,
           "%d/%d, %d/%d" % (k["default"], n["default"], k["no_tf32_override"], n["no_tf32_override"]), "%d/20, 0/20" % paper)
+
+print("\nAll rounds (%d runs in all_rounds_attribution_*.csv)" % len(one("all_rounds_attribution_*.csv")))
+allr = one("all_rounds_attribution_*.csv")
+check("runs / distinct run ids", (len(allr), len({r["run_id"] for r in allr})), (1412, 1412))
+check("main-matrix rows identical to round4_all_attribution_*.csv",
+      {r["run_id"]: r for r in allr if r["ledger"].startswith("round4_")} == {r["run_id"]: r for r in att}, True)
+
+
+def count(ledger, arm, scene=None, cell=None):
+    g = [r for r in allr if r["ledger"].startswith(ledger) and r["arm"] == arm
+         and (scene is None or r["scene"] == scene) and (cell is None or r["cell"] == cell)]
+    return "%d/%d" % (sum(crashed(r) for r in g), len(g))
+
+
+print("  Table III, precision switches (round 2C, desk_normal1, clean)")
+for arm, label, paper in [("default", "container default", "8/16"), ("cudnn_tf32_off", "cuDNN TF32 off", "8/16"),
+                          ("no_tf32_override", "override removed", "0/16"), ("matmul_tf32_off", "matrix-multiplication TF32 off", "0/16"),
+                          ("ba_matmul_fp32", "TF32 off in the BA call only", "0/16")]:
+    check("  %s" % label, count("round2C_", arm), paper)
+print("  Table S1, diagnostic rounds")
+for ledger, arm, label, paper in [("precision_pilot_", "default", "round 1, default", "10/24"), ("precision_pilot_", "fp32_strict", "round 1, full FP32", "0/24"),
+                                  ("round2A_", "default", "round 2A, default", "5/16"), ("round2A_", "amp_off", "round 2A, mixed precision off", "1/16"),
+                                  ("round2A_", "tf32_off", "round 2A, TF32 off", "0/16"), ("round2A_", "fp32_strict", "round 2A, full FP32", "0/16"),
+                                  ("round2B_", "default", "round 2B, default", "7/70"), ("round2B_", "fp32_strict", "round 2B, full FP32", "0/70"),
+                                  ("round3a_", "default", "round 3A, default", "41/140"), ("round3a_", "no_tf32_override", "round 3A, override removed", "0/140")]:
+    check("  %s" % label, count(ledger, arm), paper)
+g = [r for r in allr if r["ledger"].startswith("round3a_") and r["arm"] == "default"]
+check("  round 3A, default: degraded / clean",
+      "%d/%d, %d/%d" % (sum(crashed(r) for r in g if r["cell"] != "keep:1.0"), sum(r["cell"] != "keep:1.0" for r in g),
+                        sum(crashed(r) for r in g if r["cell"] == "keep:1.0"), sum(r["cell"] == "keep:1.0" for r in g)), "35/90, 6/50")
+print("  Table S2, round 3A per sequence and condition (default; override removed is 0/10 in every cell)")
+table_s2 = [("vector/corner_slow1", "keep:0.1", 8), ("vector/corner_slow1", "keep:0.3", 6), ("vector/corner_slow1", "patch:16", 5),
+            ("vector/corner_slow1", "patch:64", 2), ("vector/corner_slow1", "keep:1.0", 1), ("fpv/indoor_forward_3", "patch:64", 4),
+            ("fpv/indoor_forward_3", "keep:1.0", 2), ("rpgdavis/boxes_6dof", "patch:32", 2), ("rpgdavis/boxes_6dof", "keep:1.0", 2),
+            ("rpgdavis/poster_6dof", "patch:16", 6), ("rpgdavis/poster_6dof", "patch:32", 2), ("rpgdavis/poster_6dof", "keep:1.0", 1),
+            ("rpgdavis/shapes_6dof", "patch:16", 0), ("rpgdavis/shapes_6dof", "keep:1.0", 0)]
+check("  cells in round 3A", len({(r["scene"], r["cell"]) for r in allr if r["ledger"].startswith("round3a_")}), 14)
+for scene, cell, paper in table_s2:
+    check("  %s, %s" % (scene, cell), (count("round3a_", "default", scene, cell), count("round3a_", "no_tf32_override", scene, cell)),
+          ("%d/10" % paper, "0/10"))
+print("  Table S3, four GPU models (corner_slow1; reduced event density, clean: default / override removed)")
+tot = collections.Counter()
+for ledger, name, pd, pc in [("round3a_", "RTX 4090", 8, 1), ("hardware_l40s_", "L40S", 9, 1), ("hardware_h200_", "H200", 7, 3), ("hardware_h100_", "H100", 9, 2)]:
+    got = tuple(count(ledger, arm, "vector/corner_slow1", cell) for cell in ("keep:0.1", "keep:1.0") for arm in ("default", "no_tf32_override"))
+    check("  %s" % name, got, ("%d/10" % pd, "0/10", "%d/10" % pc, "0/10"))
+    tot["d"] += int(got[0].split("/")[0])
+    tot["c"] += int(got[2].split("/")[0])
+check("  total with the override: reduced event density, clean", "%d/40, %d/40" % (tot["d"], tot["c"]), "33/40, 7/40")
+mem = lambda arm: statistics.median(float(r["peak_reserved_mb"]) for r in allr   # noqa: E731
+                                    if r["ledger"].startswith("precision_pilot_") and r["arm"] == arm and r["outcome"] == "completed")
+check("  reserved GPU memory, default / full FP32 (MB, round 1)", "%.0f / %.0f" % (mem("default"), mem("fp32_strict")), "2114 / 4744")
 
 print("\nCommon gyroscope bias (rule D on the common time window)")
 bias = one("imu_bias_cross_system_pinned_*.csv")

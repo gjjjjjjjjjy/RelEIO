@@ -14,6 +14,28 @@ Common values:
   `tumvie/mocap-3d-trans`, `fpv/indoor_forward_3`, `rpgdavis/boxes_6dof`, `rpgdavis/poster_6dof`,
   `rpgdavis/shapes_6dof` (`rpgdavis` is DAVIS240C).
 
+## All rounds (1412 runs)
+
+### `all_rounds_attribution_20261123.csv`: every DEIO run of the study
+Written by `script/diag/attribution_table.py` over all ledgers. Columns as in
+`round4_all_attribution_*.csv` below; the rows of the main matrix are identical in both files.
+
+| `ledger` begins with | Round | Runs |
+|---|---|---|
+| `precision_pilot_` | round 1 (pilot): `desk_normal1`, clean, arms `default` and `fp32_strict` (full FP32) | 48 |
+| `round2A_` | round 2A: `desk_normal1`, clean, arms `default`, `amp_off` (mixed precision off), `tf32_off`, `fp32_strict` | 64 |
+| `round2B_` | round 2B: the other seven sequences, clean, arms `default` and `fp32_strict` | 140 |
+| `round2C_` | round 2C, the precision switches of Table III: `default`, `cudnn_tf32_off`, `no_tf32_override`, `matmul_tf32_off`, `ba_matmul_fp32` (TF32 off in the bundle-adjustment call only) | 80 |
+| `round3a_` | round 3A: 14 conditions on five sequences, both arms, on the RTX 4090 machine | 280 |
+| `hardware_l40s_`, `hardware_h200_`, `hardware_h100_` | replication on three further GPU models | 120 |
+| `round4_` | round 4, the main matrix | 640 |
+| `imu_bias_deio_` | DEIO's runs of the bias experiment (`gbias:5` is the biased condition) | 40 |
+
+In this file the clean condition is labelled `base` in rounds 1-2, `keep:1.0` in round 3A and in the hardware
+replication, and `clean` in the main matrix and the bias experiment. Further conditions of round 3A: `keep:0.3`,
+`patch:32`, `patch:64`. The eight untraced reference runs of round 1 and the voxel-cache check are not part of
+the extracted records.
+
 ## Main matrix (8 sequences x 4 input conditions x 2 arms x 10 seeds = 640 runs)
 
 ### `round4_all_attribution_20261121_023641.csv`: every run, 640 rows
@@ -78,8 +100,8 @@ distinct inputs, compared across arms and seeds.
 
 `hardware_l40s_*`, `hardware_h200_*`, `hardware_h100_*_details_*.csv`: VECtor `corner_slow1` under event density
 0.1 and on clean input, ten runs per input condition and arm. Columns as in the main matrix without the last eight;
-in particular these files carry no `cell` column, so they give the totals per arm, not the split into the two
-input conditions.
+these files carry no `cell` column. The same runs with their input condition are in
+`all_rounds_attribution_20261123.csv`.
 
 ## Common gyroscope bias (80 runs)
 
