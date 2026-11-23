@@ -102,6 +102,9 @@ for arm, rule, tol, paper in [("no_tf32_override", "D", 10, 227), ("no_tf32_over
                               ("default", "D", 10, 195), ("default", "A", 10, 267)]:
     k = sum(float(r[RULES[rule]]) <= tol for r in by_arm[arm])
     check("%s, rule %s, within %d%%" % (arm, rule, tol), k, paper)
+k = sum(float(r["se3_all"]) <= 10 for r in by_arm["default"])
+check("default, rule D, within 10%: share of the completed runs / of all 320 runs (%)",
+      "%.1f / %.1f" % (100.0 * k / len(by_arm["default"]), 100.0 * k / 320), "71.7 / 60.9")
 off = by_arm["no_tf32_override"]
 check("override removed: pass rule A and fail rule D at 10%", sum(float(r["deio_rule"]) <= 10 < float(r["se3_all"]) for r in off), 86)
 check("override removed: pass rule D and fail rule A at 10%", sum(float(r["se3_all"]) <= 10 < float(r["deio_rule"]) for r in off), 0)
@@ -120,6 +123,14 @@ d, dl, du = newcombe(67, 80, 47, 80)
 check("  reduced event density, override removed, rule D (pp)", "%d [%d, %d]" % (round(d), round(dl), round(du)), "-25 [-38, -11]")
 d, dl, du = newcombe(67, 80, 57, 80)
 check("  reduced patch budget, override removed, rule D (pp)", "%.1f [%.0f, %+.1f]" % (d, dl, du), "-12.5 [-25, +0.5]")
+# sensitivity check, not pre-specified: the same comparison on pairs of runs with the same sequence and seed
+within = {(r["scene"], r["cell"], r["seed"]): float(r["se3_all"]) <= 10 for r in off}
+pairs = sorted({(s, sd) for s, _, sd in within})
+for cell, paper in [("keep:0.1", (80, 20, 0, "0.000")), ("tq:10000", (80, 16, 5, "0.027")), ("patch:16", (80, 13, 3, "0.021"))]:
+    b = sum(within[(s, "clean", sd)] and not within[(s, cell, sd)] for s, sd in pairs)
+    c = sum(within[(s, cell, sd)] and not within[(s, "clean", sd)] for s, sd in pairs)
+    p = min(1.0, 2.0 * sum(math.comb(b + c, i) for i in range(min(b, c) + 1)) / 2 ** (b + c))   # exact McNemar test
+    check("  paired, %s: pairs / within 10%% on clean only / under the condition only / p" % cell, (len(pairs), b, c, "%.3f" % p), paper)
 
 print("\nPaired by sequence, input condition and seed")
 key = lambda r: (r["scene"], r["cell"], r["seed"])   # noqa: E731
@@ -162,6 +173,11 @@ for arm, label, paper in [("default", "container default", "8/16"), ("cudnn_tf32
                           ("no_tf32_override", "override removed", "0/16"), ("matmul_tf32_off", "matrix-multiplication TF32 off", "0/16"),
                           ("ba_matmul_fp32", "TF32 off in the BA call only", "0/16")]:
     check("  %s" % label, count("round2C_", arm), paper)
+seen = collections.defaultdict(set)   # outcomes per GPU of the machine, container default (one seed, identical input)
+for r in allr:
+    if r["ledger"].startswith("round2C_") and r["arm"] == "default":
+        seen[r["gpu"]].add(crashed(r))
+check("  container default: GPUs used / GPUs with both a completed and a crashed run", (len(seen), sum(len(v) == 2 for v in seen.values())), (8, 5))
 print("  Table S1, diagnostic rounds")
 for ledger, arm, label, paper in [("precision_pilot_", "default", "round 1, default", "10/24"), ("precision_pilot_", "fp32_strict", "round 1, full FP32", "0/24"),
                                   ("round2A_", "default", "round 2A, default", "5/16"), ("round2A_", "amp_off", "round 2A, mixed precision off", "1/16"),

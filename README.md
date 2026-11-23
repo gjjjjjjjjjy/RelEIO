@@ -10,7 +10,8 @@ the code that produced and analyzes them. It accompanies the paper
 The protocol treats a reported trajectory error as a measurement result whose conditions must be stated:
 
 - every run is recorded with its computing environment, precision flags, and input fingerprints;
-- outcomes (completed, numerical failure, undetermined) are classified before any error is computed;
+- outcomes (completed, numerical failure, undetermined) are classified from how a run ends (exit status, exception,
+  whether the estimator wrote a finite result), not from the size of its error;
 - completed runs are scored under a stated rule, and reliability is the share of *all* runs that complete within an
   error tolerance, so crashes and inaccurate completions share one denominator.
 
@@ -22,7 +23,7 @@ Python 3.9 or later, standard library only:
 python3 script/headline_numbers.py
 ```
 
-The script recomputes 87 quantities from the records and prints each next to the value stated in the paper; it exits
+The script recomputes 92 quantities from the records and prints each next to the value stated in the paper; it exits
 with status 1 if any differs. Among them:
 
 | Result | Value | Records |
