@@ -1,0 +1,83 @@
+diff --git a/event_detector/src/event_detector_node.cpp b/event_detector/src/event_detector_node.cpp
+index a5ba6b1..0c3d4f9 100644
+--- a/event_detector/src/event_detector_node.cpp
++++ b/event_detector/src/event_detector_node.cpp
+@@ -1,4 +1,7 @@
+ #include <ros/ros.h>
++#include <cstdio>
++#include <cstdlib>
++#include <string>
+ #include <sensor_msgs/Image.h>
+ #include <sensor_msgs/image_encodings.h>
+ #include <sensor_msgs/PointCloud.h>
+@@ -58,11 +61,31 @@ void pubTrackImage(const cv::Mat &imgTrack, const cv::Mat &imgTrack_two, const c
+ }
+ 
+ 
++// FreqVIO: count event packets that upstream drops (it keeps only the newest unprocessed packet), and with
++// SUPEREIO_KEEP_ALL_EVENTS=1 keep every packet in arrival order instead. Unset: upstream behaviour, only counted.
++static long freqvio_received = 0, freqvio_dropped = 0;
++static size_t freqvio_max_queue = 0;
++static const bool freqvio_keep_all = getenv("SUPEREIO_KEEP_ALL_EVENTS") != nullptr &&
++                                     std::string(getenv("SUPEREIO_KEEP_ALL_EVENTS")) == "1";
++
++void freqvio_print_event_counts(const char *when) {
++    printf("[freqvio] %s: event packets received %ld dropped %ld max queue %zu keep_all %d\n", when,
++           freqvio_received, freqvio_dropped, freqvio_max_queue, (int)freqvio_keep_all);
++    fflush(stdout);
++}
++
+ void eventsCallback_buf(const dvs_msgs::EventArray &event_msg){
+     m_buf.lock();
+-    if (!events_buf.empty())
++    freqvio_received++;
++    if (!freqvio_keep_all && !events_buf.empty()) {
+       events_buf.pop();
++      freqvio_dropped++;
++    }
+     events_buf.push(event_msg);
++    if (events_buf.size() > freqvio_max_queue)
++      freqvio_max_queue = events_buf.size();
++    if (freqvio_received % 200 == 0)
++      freqvio_print_event_counts("running");
+     m_buf.unlock();
+ }
+ 
+@@ -340,6 +363,9 @@ int main(int argc, char **argv)
+     std::thread sync_thread{sync_process};
+ 
+     ros::spin();
++    m_buf.lock();
++    freqvio_print_event_counts("final");
++    m_buf.unlock();
+     return 0;
+ }
+ 
+diff --git a/supereio_ba/src/estimator.cpp b/supereio_ba/src/estimator.cpp
+index d050562..9a7ec72 100644
+--- a/supereio_ba/src/estimator.cpp
++++ b/supereio_ba/src/estimator.cpp
+@@ -1,4 +1,6 @@
+ #include "estimator.h"
++#include <cstdio>
++#include <string>
+ 
+ double total_t_solve = 0.0;
+ int num_t_solve = 0;
+@@ -802,6 +804,16 @@ void Estimator::optimization()
+     TicToc t_solver;
+     ceres::Solver::Summary summary;
+     ceres::Solve(options, &problem, &summary);
++    {   // FreqVIO: count the solves that stopped on the wall-clock limit (max_solver_time) rather than on iterations
++        static long freqvio_solves = 0, freqvio_time_limited = 0;
++        freqvio_solves++;
++        if (summary.message.find("solver time") != std::string::npos)
++            freqvio_time_limited++;
++        if (freqvio_solves % 100 == 0) {
++            printf("[freqvio] solves %ld stopped by the time limit %ld\n", freqvio_solves, freqvio_time_limited);
++            fflush(stdout);
++        }
++    }
+     //cout << summary.BriefReport() << endl;
+     ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
+     ROS_DEBUG("solver costs: %f", t_solver.toc());

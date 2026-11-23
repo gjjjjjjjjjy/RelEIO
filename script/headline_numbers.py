@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Recompute the headline numbers of the paper from the per-run records and compare them with the paper.
+
+Standard library only. Reads the records directory (see script/_layout.py):
+  round4_all_attribution_*.csv         every run of the main matrix (640): arm, input condition, sequence, outcome
+  deio_se3_round4_steps_*.csv          every completed run (592) scored under rules A-D
+  hardware_*_details_*.csv             the replication runs on three further GPU models (40 runs each)
+  imu_bias_cross_system_pinned_*.csv   the common-gyroscope-bias runs of DEIO and SuperEIO (80)
+
+Arms: "default" is the container default (TF32 override set), "no_tf32_override" is the override removed.
+Rules: A = DEIO's evaluation code (deio_rule), B = A with 20 ms matching (sim3_1000_20ms), C = B fitted on all
+poses (sim3_all), D = C without scale, the main rule (se3_all). Errors are MPE in percent of the path length.
+A crashed run counts as outside every tolerance.
+
+  python3 script/headline_numbers.py        # prints every quantity next to the value in the paper; exit 1 on a mismatch
+"""
+import collections
+import csv
+import glob
+import math
+import os
+import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _layout  # noqa: E402
+
+REC = _layout.RECORDS
+ARMS = ("default", "no_tf32_override")
+CELLS = ("clean", "keep:0.1", "tq:10000", "patch:16")
+RULES = collections.OrderedDict([("A", "deio_rule"), ("B", "sim3_1000_20ms"), ("C", "sim3_all"), ("D", "se3_all")])
+SEEDS = [str(s) for s in range(2000, 2010)]
+rows_checked, mismatches = 0, []
+
+
+def one(pattern):
+    f = sorted(glob.glob(os.path.join(REC, pattern)))
+    assert len(f) == 1, "expected one file for %s in %s, found %s" % (pattern, REC, f)
+    return list(csv.DictReader(open(f[0])))
+
+
+def check(label, got, paper):
+    """Print one quantity; `paper` is the value stated in the manuscript."""
+    global rows_checked
+    rows_checked += 1
+    ok = got == paper
+    if not ok:
+        mismatches.append(label)
+    print("  %-72s %-22s paper: %-22s %s" % (label, got, paper, "ok" if ok else "MISMATCH"))
+
+
+def wilson(k, n, z=1.959964):
+    p = k / n
+    d = 1 + z * z / n
+    c = p + z * z / (2 * n)
+    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return (c - h) / d, (c + h) / d
+
+
+def newcombe(k1, n1, k2, n2):
+    """Newcombe hybrid score interval for p2 - p1 (method 10), in percentage points."""
+    p1, p2 = k1 / n1, k2 / n2
+    l1, u1 = wilson(k1, n1)
+    l2, u2 = wilson(k2, n2)
+    d = p2 - p1
+    return 100 * d, 100 * (d - math.sqrt((p2 - l2) ** 2 + (u1 - p1) ** 2)), 100 * (d + math.sqrt((u2 - p2) ** 2 + (p1 - l1) ** 2))
+
+
+def pct(lo, hi):
+    return "[%d, %d]" % (round(100 * lo), round(100 * hi))
+
+
+att = one("round4_all_attribution_*.csv")
+steps = one("deio_se3_round4_steps_*.csv")
+crashed = lambda r: r["outcome"].startswith("numerical_failure")   # noqa: E731
+
+print("Main matrix: outcomes (%s)" % _layout.rel(REC))
+check("runs", len(att), 640)
+check("distinct run ids", len({r["run_id"] for r in att}), 640)
+check("outcomes other than completed / numerical failure", sum(not (crashed(r) or r["outcome"] == "completed") for r in att), 0)
+for arm, paper in zip(ARMS, (48, 0)):
+    n = sum(r["arm"] == arm for r in att)
+    k = sum(r["arm"] == arm and crashed(r) for r in att)
+    check("crashes, %s" % arm, "%d/%d" % (k, n), "%d/320" % paper)
+lo, hi = wilson(48, 320)
+check("  Wilson 95% CI of 48/320 (%)", pct(lo, hi), "[12, 19]")
+check("  upper bound of 0/320 (%)", "%.1f" % (100 * wilson(0, 320)[1]), "1.2")
+d, dl, du = newcombe(0, 320, 48, 320)
+check("  difference between arms (pp), Newcombe 95% CI", "%d [%d, %d]" % (round(d), round(dl), round(du)), "15 [11, 19]")
+for cell, paper in zip(CELLS, (10, 19, 6, 13)):
+    k = sum(r["arm"] == "default" and r["cell"] == cell and crashed(r) for r in att)
+    check("crashes, default, %s" % cell, "%d/80" % k, "%d/80" % paper)
+check("sequences with a crash (default)", len({r["scene"] for r in att if r["arm"] == "default" and crashed(r)}), 8)
+check("completed runs with a score", len(steps), 592)
+check("  all of them are completed runs of the matrix", {r["run"] for r in steps} == {r["run_id"] for r in att if r["outcome"] == "completed"}, True)
+
+print("\nReliability: runs within a tolerance, of 320 per arm")
+by_arm = {a: [r for r in steps if r["arm"] == a] for a in ARMS}
+for arm, rule, tol, paper in [("no_tf32_override", "D", 10, 227), ("no_tf32_override", "D", 1, 136), ("no_tf32_override", "D", 100, 251),
+                              ("no_tf32_override", "A", 10, 313), ("no_tf32_override", "A", 1, 246), ("no_tf32_override", "A", 100, 317),
+                              ("default", "D", 10, 195), ("default", "A", 10, 267)]:
+    k = sum(float(r[RULES[rule]]) <= tol for r in by_arm[arm])
+    check("%s, rule %s, within %d%%" % (arm, rule, tol), k, paper)
+off = by_arm["no_tf32_override"]
+check("override removed: pass rule A and fail rule D at 10%", sum(float(r["deio_rule"]) <= 10 < float(r["se3_all"]) for r in off), 86)
+check("override removed: pass rule D and fail rule A at 10%", sum(float(r["se3_all"]) <= 10 < float(r["deio_rule"]) for r in off), 0)
+for rule, paper in zip(RULES, (3, 3, 0, 69)):
+    check("override removed: runs above the path length, rule %s" % rule, sum(float(r[RULES[rule]]) > 100 for r in off), paper)
+check("override removed: rule D error below the stationary baseline", sum(float(r["se3_all"]) < float(r["gt_spread"]) for r in off), 173)
+
+print("\nTable IV: runs within 10% per input condition, of 80 (removed D / A; default D / A / crashes)")
+table4 = {"clean": (67, 79, 63, 70, 10), "keep:0.1": (47, 75, 26, 57, 19), "tq:10000": (56, 80, 55, 74, 6), "patch:16": (57, 79, 51, 66, 13)}
+for cell in CELLS:
+    got = tuple(sum(float(r[RULES[rule]]) <= 10 for r in by_arm[arm] if r["cell"] == cell)
+                for arm, rule in [("no_tf32_override", "D"), ("no_tf32_override", "A"), ("default", "D"), ("default", "A")])
+    got += (sum(r["arm"] == "default" and r["cell"] == cell and crashed(r) for r in att),)
+    check(cell, got, table4[cell])
+d, dl, du = newcombe(67, 80, 47, 80)
+check("  reduced event density, override removed, rule D (pp)", "%d [%d, %d]" % (round(d), round(dl), round(du)), "-25 [-38, -11]")
+d, dl, du = newcombe(67, 80, 57, 80)
+check("  reduced patch budget, override removed, rule D (pp)", "%.1f [%.0f, %+.1f]" % (d, dl, du), "-12.5 [-25, +0.5]")
+
+print("\nPaired by sequence, input condition and seed")
+key = lambda r: (r["scene"], r["cell"], r["seed"])   # noqa: E731
+score = {arm: {key(r): float(r["se3_all"]) for r in by_arm[arm]} for arm in ARMS}
+both = sorted(set(score["default"]) & set(score["no_tf32_override"]))
+check("pairs completed in both arms", len(both), 272)
+check("  within 10% with the override, not without it", sum(score["default"][k] <= 10 < score["no_tf32_override"][k] for k in both), 14)
+check("  within 10% without the override, not with it", sum(score["no_tf32_override"][k] <= 10 < score["default"][k] for k in both), 11)
+check("  median paired difference of the rule D error (pp)",
+      "%.3f" % statistics.median(score["no_tf32_override"][k] - score["default"][k] for k in both), "-0.001")
+lost = [k for k in score["no_tf32_override"] if k not in score["default"]]        # the seeds whose default run crashed
+check("crashed with the override", len(lost), 48)
+check("  of these, within 10% without the override", sum(score["no_tf32_override"][k] <= 10 for k in lost), 35)
+check("every condition has ten seeds per arm among completed + crashed runs",
+      all({r["seed"] for r in off if (r["scene"], r["cell"]) == sc} == set(SEEDS) for sc in {(r["scene"], r["cell"]) for r in off}), True)
+
+print("\nReplication on three further GPU models (corner_slow1, two input conditions, 20 runs per arm and GPU)")
+for tag, name, paper in [("l40s", "L40S", 10), ("h200", "H200", 10), ("h100", "H100", 11)]:
+    hw = one("hardware_%s_*_details_*.csv" % tag)
+    k = collections.Counter(r["arm"] for r in hw if crashed(r))
+    n = collections.Counter(r["arm"] for r in hw)
+    check("%s: crashes default / override removed" % name,
+          "%d/%d, %d/%d" % (k["default"], n["default"], k["no_tf32_override"], n["no_tf32_override"]), "%d/20, 0/20" % paper)
+
+print("\nCommon gyroscope bias (rule D on the common time window)")
+bias = one("imu_bias_cross_system_pinned_*.csv")
+check("runs, all completed", (len(bias), all(r["status"] == "completed" for r in bias)), (80, True))
+med = lambda system, seq, cond: statistics.median(float(r["se3_W"]) for r in bias   # noqa: E731
+                                                  if (r["system"], r["seq"], r["cond"]) == (system, seq, cond))
+check("SuperEIO boxes_6dof median, biased / clean (%)",
+      "%.2f / %.2f" % (med("SuperEIO", "boxes_6dof", "gbias"), med("SuperEIO", "boxes_6dof", "clean")), "5.37 / 4.24")
+
+print("\n%d quantities checked, %d mismatch%s%s" % (rows_checked, len(mismatches), "" if len(mismatches) == 1 else "es",
+                                                   (": " + "; ".join(mismatches)) if mismatches else ""))
+sys.exit(1 if mismatches else 0)

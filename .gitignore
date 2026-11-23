@@ -2,5 +2,7 @@ __pycache__/
 *.pyc
 .DS_Store
 
-/manuscript/
-/reports/
+# written by the analysis scripts
+/output/
+/first_submission/reports/
+/first_submission/manuscript/

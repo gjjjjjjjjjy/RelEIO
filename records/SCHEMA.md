@@ -1,59 +1,104 @@
-# Released record schema and interpretation
+# Records of the revised paper
 
-Each row is a recorded run. Original CSVs are preserved.
+Every file is extracted from the run ledgers by the scripts in `script/diag/` and is not edited by hand.
+One row is one run unless stated otherwise. Errors are the mean position error (MPE) in percent of the
+ground-truth path length. `SHA256SUMS` lists the checksum of each file.
 
-| File | System | Axis | Error |
-|---|---|---|---|
-| deio_keep/time/patch.csv | DEIO | density / time quantization / patch count | MPE % |
-| devo.csv | DEIO IMU-off ablation | density | MPE % |
-| loopclosure.csv | DEIO loop-closure variant | density | MPE % |
-| rampvo.csv | RAMP-VO, event + frame | density | ATE m |
-| e2vid_tartanvo.csv | reconstruction + VO | density | ATE m |
+Common values:
 
-Identifiers are dataset, scene, axis level and seed (rep for E2VID+TartanVO).
-status is ok or crash. A completed row requires a finite nonnegative error; a
-crash row has an empty error. Unknown states and duplicate identifiers raise.
-A missing completed-run metric is a malformed record, not an inferred crash.
+- `arm`: `default` is the container default (the variable `TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1` is set);
+  `no_tf32_override` is the same environment with that variable unset.
+- `cell`: input condition. `clean`; `keep:0.1` event density 0.1; `tq:10000` timestamp quantization 10 ms;
+  `patch:16` patch budget 16.
+- `scene`: dataset and sequence. `vector/desk_normal1`, `vector/corner_slow1`, `hku/vicon_dark1`,
+  `tumvie/mocap-3d-trans`, `fpv/indoor_forward_3`, `rpgdavis/boxes_6dof`, `rpgdavis/poster_6dof`,
+  `rpgdavis/shapes_6dof` (`rpgdavis` is DAVIS240C).
 
-For MPE records, the operational outcomes are:
-- numerical crash;
-- completed with MPE > 100%;
-- completed with MPE <= 100%.
+## Main matrix (8 sequences x 4 input conditions x 2 arms x 10 seeds = 640 runs)
 
-The historical words catastrophic and valid refer to the last two threshold
-categories. They do not establish mission failure or navigation acceptability.
-Error medians, worst values and IQR use the within-threshold completed subset;
-its size is reported. No qualifying observations yields an undefined statistic,
-represented by null in JSON or an empty CSV field. Failure intervals use the
-Wilson method with all runs as denominator.
+### `round4_all_attribution_20261121_023641.csv`: every run, 640 rows
+Written by `script/diag/attribution_table.py`.
 
-Cross-system comparisons use numerical crashes only, on each pair's common
-sequence/keep cells. MPE and ATE retain their units. No common ATE catastrophic
-threshold or complete-trajectory coverage criterion is available in these CSVs.
+| Column | Meaning |
+|---|---|
+| `run_id` | identifier of the run in the ledger |
+| `arm`, `cell`, `scene` | as above |
+| `gpu` | index of the GPU on the machine (eight RTX 4090) |
+| `outcome`, `category` | `completed`, or `numerical_failure:<site>` (a crash); `category` is the outcome without the site |
+| `mpe` | error written by the estimator's own evaluation (rule A), empty for a crash |
+| `wall_s` | wall time of the run in seconds, tracer included |
+| `ba_tf32` | whether TF32 matrix multiplication was on inside the visual bundle adjustment, as read in the process |
+| `first_where`, `first_tensor`, `first_frame` | checkpoint, tensor, and frame at which the tracer first detected a non-finite value |
+| `first_imu_enabled`, `first_vi_initialized` | whether IMU factors were in use, and whether the visual-inertial alignment had completed, at that detection |
+| `next_detections` | the following detections |
+| `ba_nonfinite_from_finite_inputs` | calls of the visual bundle adjustment that returned a non-finite output from finite input |
+| `frames_completed`, `keyframes`, `vi_align_calls`, `vi_initialized` | progress counters of the run |
+| `chol_flags` | number of Cholesky factorizations that reported a failure |
+| `chol_first_where`, `chol_first_call`, `chol_first_info` | site, call index, and status code of the first such report |
+| `chol_first_S_finite`, `chol_first_y_finite`, `chol_first_dX_finite` | whether the Schur complement, the right-hand side, and the solution were finite at that report |
+| `chol_vs_detection` | whether the first Cholesky report came before (`chol_first`) or after (`detection_first`) the first detection in the log |
+| `chol_info_values` | the status codes reported |
+| `ledger` | name of the ledger the run belongs to |
+| `peak_alloc_mb`, `peak_reserved_mb` | peak memory of the PyTorch allocator |
+| `device_mem_mib` | largest device-memory sample of the process (every 30 s; a lower bound of the peak) |
 
-The analysis writes Q1/Q2/Q3 definitions to reports/statistics.json.
-See docs/INTEGRATION.md for their interpretation. Q3 ties are exact ties at the
-precision stored in the CSV; original higher-precision outputs are unavailable.
-The empirical success curve counts all runs in the denominator; status=ok is
-the released completion indicator, not independently verified output coverage.
+`round4_main_all_details_20261121_023641.csv` holds the same runs without the last eight columns
+(written by `script/diag/pilot_details.py`).
 
-## Input evidence fields
+### `deio_se3_round4_steps_20261121.csv`: every completed run under four scoring rules, 592 rows
+Written by `script/diag/deio_se3_eval.py` from the saved trajectories. The 48 crashed runs have no row.
 
-stress_version, req_keep, req_tq_us describe the requested operator.
-n_in/n_out/actual_keep and tq_changed/tq_total/tq_changed_ratio describe recorded
-event counts. Blank fields remain missing evidence.
+| Column | Meaning |
+|---|---|
+| `run`, `arm`, `cell`, `scene`, `seed`, `ledger` | identification; `seed` is the run seed (2000-2009) |
+| `deio_rule` | rule A, the rule of DEIO's evaluation code: Sim(3) fitted on the first 1000 poses (all poses on UZH-FPV), matching within 1 s |
+| `sim3_1000_20ms` | rule B: rule A with matching within 20 ms |
+| `sim3_all` | rule C: rule B fitted on all matched poses |
+| `se3_all` | rule D, the main rule: rule C without scale (SE(3)) |
+| `sim3_scale` | scale of the Sim(3) fit on all matched poses |
+| `dist_ratio` | median ratio of the distance traveled between poses 1 s apart, estimate over ground truth (no alignment) |
+| `gt_spread` | mean distance of the matched ground truth from its centroid, in percent of the path length (the score of an estimate that does not move) |
+| `est_extent_m`, `gt_extent_m` | largest distance from the first pose, estimate and ground truth, in metres |
+| `ledger_mpe` | the error the estimator wrote at run time (equals `mpe` above) |
+| `score` | `ok` if the trajectory could be scored |
 
-first_window_checksum and full_stream_hash retain historical values. The
-available historical implementation aggregates window counts/sums/extrema.
-Equal summaries do not establish byte-identical event streams. Blank fields indicate missing evidence.
-These fields cannot locate a numerical divergence within the pipeline.
+### Derived tables
+- `round4_main_table_se3.csv`: one row per sequence, input condition and arm (64 rows): runs, crashes, completed
+  runs, runs with a rule D error at most 100%, medians under rules D and A, runs with a fitted scale below 0.5.
+  Written by `script/diag/round4_reliability.py`.
+- `round4_main_table_20261121.csv`: one row per sequence and input condition (32 rows) with the failures of both
+  arms and the Newcombe interval of their difference, as fixed before the run. Written by
+  `script/diag/round4_analysis.py`.
 
-## Available and missing records
+### `round4_input_identity_20261121_from_cluster.txt`
+Output of `script/diag/compare_inputs.py` on the ledger of the main matrix: the input fingerprints of the 24
+distinct inputs, compared across arms and seeds.
 
-There are 480 primary runs, 60 loop-closure runs, 45 IMU-off runs, 15 RAMP-VO
-runs and 27 E2VID+TartanVO rows. Runtime, GPU peak memory,
-complete output trajectories and failure timestamps are absent from these CSVs.
+## Replication on three further GPU models (40 runs each)
 
-The schema documents evidence in this release. An execution.csv produced by the
-new matrix runner is a process log and must not be silently relabeled as this
-scientific per-run dataset.
+`hardware_l40s_*`, `hardware_h200_*`, `hardware_h100_*_details_*.csv`: VECtor `corner_slow1` under event density
+0.1 and on clean input, ten runs per input condition and arm. Columns as in the main matrix without the last eight;
+in particular these files carry no `cell` column, so they give the totals per arm, not the split into the two
+input conditions.
+
+## Common gyroscope bias (80 runs)
+
+`imu_bias_cross_system_pinned_20261121.csv`, written by `script/diag/cross_system_eval.py`.
+
+| Column | Meaning |
+|---|---|
+| `system` | `DEIO` (override removed) or `SuperEIO` (upstream configuration, CPU-pinned batch) |
+| `seq` | `boxes_6dof` or `poster_6dof` (DAVIS240C) |
+| `cond` | `clean`, or `gbias`: a constant gyroscope bias of (+5, -5, +5) deg/s |
+| `rep` | run seed (DEIO) or repetition index (SuperEIO) |
+| `run`, `status` | identifier and outcome of the run |
+| `se3_W` | rule D error on the time window common to both systems |
+| `se3_W_first5s` | the same with the alignment fitted on the first 5 s of the window |
+| `sim3_W`, `sim3_W_scale` | error and scale of a Sim(3) fit on the window |
+| `dist_ratio_1s` | distance ratio over 1 s, as above |
+| `matched` | number of matched poses |
+
+## First submission
+
+The records of the first submission are in `first_submission/records/` with their own `SCHEMA.md`. They were made
+before the per-run ledgers existed and are not used in the revised paper.

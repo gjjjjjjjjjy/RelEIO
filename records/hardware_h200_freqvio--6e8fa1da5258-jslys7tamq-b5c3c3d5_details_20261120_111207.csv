@@ -1,0 +1,41 @@
+run_id,arm,gpu,outcome,mpe,wall_s,first_where,first_tensor,first_frame,first_imu_enabled,first_vi_initialized,next_detections,ba_nonfinite_from_finite_inputs,frames_completed,keyframes,vi_align_calls,vi_initialized,chol_flags,chol_first_where,chol_first_call,chol_first_info,chol_first_S_finite,chol_first_y_finite,chol_first_dX_finite,chol_vs_detection,chol_info_values
+20261120T112303660377Z-46fee17e,default,0,numerical_failure:vi_alignment_nan_gravity,,17.4,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,22,cuda_ba:dense,13,39,True,True,False,chol_first,1 39
+20261120T112315662074Z-86676276,default,6,numerical_failure:vi_alignment_nan_gravity,,18.71,fastba.BA(out),poses,235,False,True,after_frame:pg.poses_[:n]@235 reproject(out):coords@236 corr(out):corr@236,1,237,13,1,False,5,cuda_ba:dense,252,1,False,False,False,chol_first,1
+20261120T112305660414Z-4577d457,default,1,numerical_failure:vi_alignment_nan_gravity,,29.25,fastba.BA(out),poses,150,False,True,after_frame:pg.poses_[:n]@150 reproject(out):coords@151 corr(out):corr@151,1,151,13,1,False,3,cuda_ba:dense,278,1,False,False,False,chol_first,1
+20261120T112323410637Z-ac954b0d,default,0,numerical_failure:vi_alignment_nan_gravity,,16.21,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,18,cuda_ba:dense,17,39,True,True,False,chol_first,1 39
+20261120T112307660744Z-6a26e186,no_tf32_override,2,completed,1.89,51.81,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112311661389Z-6f413210,no_tf32_override,4,completed,1.9,50.57,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112309661028Z-69f4991b,no_tf32_override,3,completed,1.79,69.88,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112313661763Z-8a28cce1,no_tf32_override,5,completed,1.44,66.45,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112317662398Z-40169bc9,default,7,completed,1.25,68.3,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112335269882Z-06530093,no_tf32_override,1,completed,1.95,51.04,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112334683951Z-c130b386,default,6,completed,1.92,63.26,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112339991121Z-c65a04a6,no_tf32_override,0,completed,1.7,63.63,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261120T112426270807Z-aaa16824,default,7,numerical_failure:vi_alignment_nan_gravity,,17.62,fastba.BA(out),poses,146,False,True,after_frame:pg.poses_[:n]@146 reproject(out):coords@147 corr(out):corr@147,1,158,21,1,False,25,cuda_ba:dense,74,1,False,False,False,chol_first,1
+20261120T112359913324Z-cfb89109,no_tf32_override,2,completed,1.78,51.98,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112402555782Z-15c35194,no_tf32_override,4,completed,1.71,64.91,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261120T112420055111Z-2b734fe2,default,3,completed,1.86,48.13,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112420462018Z-a64effda,default,5,completed,1.51,63.01,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261120T112507745247Z-2fb2cfe3,default,4,numerical_failure:vi_alignment_nan_gravity,,17.09,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,14,cuda_ba:dense,21,39,True,True,False,chol_first,1 39
+20261120T112438333457Z-147a2081,no_tf32_override,6,completed,2.05,49.58,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261120T112426631723Z-e9a6d50b,default,1,completed,1.9,65.6,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112444280736Z-b0a58437,no_tf32_override,7,completed,1.92,49.41,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112523808184Z-6f70236f,default,5,numerical_failure:vi_alignment_nan_gravity,,18.06,fastba.BA(out),poses,146,False,True,after_frame:pg.poses_[:n]@146 reproject(out):coords@147 corr(out):corr@147,1,158,21,1,False,24,cuda_ba:dense,74,1,False,False,False,chol_first,1
+20261120T112443925001Z-67cfe773,no_tf32_override,0,completed,1.54,62.14,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112525229649Z-39014735,default,4,numerical_failure:vi_alignment_nan_gravity,,30.9,fastba.BA(out),poses,159,False,True,after_frame:pg.poses_[:n]@159 reproject(out):coords@160 corr(out):corr@160,1,161,13,1,False,4,cuda_ba:dense,295,1,False,False,False,detection_first,1
+20261120T112452194774Z-ccce65b9,no_tf32_override,2,completed,1.82,68.29,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261120T112546475616Z-c782cb6c,default,0,numerical_failure:vi_alignment_nan_gravity,,16.0,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,16,cuda_ba:dense,19,39,True,True,False,chol_first,1 39
+20261120T112508702007Z-02324725,default,3,completed,1.63,62.9,,,,,,,0,1150,30,3,True,0,,,,,,,,
+20261120T112528276349Z-a3a37479,no_tf32_override,6,completed,1.88,49.6,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112534082958Z-90533bd0,no_tf32_override,7,completed,2.1,48.16,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112532557649Z-407d853f,no_tf32_override,1,completed,1.77,65.22,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261120T112542229056Z-6059ba60,no_tf32_override,5,completed,1.52,66.26,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261120T112600818839Z-08ea936d,default,2,completed,2.0,50.9,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112611956164Z-892326cc,no_tf32_override,3,completed,1.8,48.61,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112556449824Z-cf2b068b,default,4,completed,1.32,68.35,,,,,,,0,1150,34,3,True,0,,,,,,,,
+20261120T112602771491Z-763a0188,default,0,completed,1.54,64.15,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261120T112622616108Z-4dd2a68a,no_tf32_override,7,completed,2.07,50.06,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261120T112618310818Z-33a77a4d,no_tf32_override,6,completed,1.95,66.04,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261120T112652115735Z-6c5d4468,default,2,numerical_failure:vi_alignment_nan_gravity,,34.08,fastba.BA(out),poses,286,False,True,"vi_alignment(in):poses_finite@286 vi_alignment(in):rot_finite@286 vi_alignment:gyro_bias:A,b,bg@286",1,286,13,3,False,1,cuda_ba:dense,556,56,True,True,False,chol_first,56
+20261120T112648870517Z-f1676235,default,5,completed,2.06,50.13,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261120T112638051274Z-b508031d,no_tf32_override,1,completed,1.51,63.61,,,,,,,0,1150,29,3,True,0,,,,,,,,

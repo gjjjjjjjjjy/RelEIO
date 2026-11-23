@@ -1,0 +1,41 @@
+run_id,arm,gpu,outcome,mpe,wall_s,first_where,first_tensor,first_frame,first_imu_enabled,first_vi_initialized,next_detections,ba_nonfinite_from_finite_inputs,frames_completed,keyframes,vi_align_calls,vi_initialized,chol_flags,chol_first_where,chol_first_call,chol_first_info,chol_first_S_finite,chol_first_y_finite,chol_first_dX_finite,chol_vs_detection,chol_info_values
+20261121T091127700506Z-faf3eb54,default,0,numerical_failure:vi_alignment_nan_gravity,,16.22,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,22,cuda_ba:dense,13,39,True,True,False,chol_first,1 39
+20261121T091146224368Z-45be2bf8,default,0,completed,1.97,68.87,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T091255294571Z-1b590934,no_tf32_override,0,completed,1.76,53.81,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T091349275855Z-74c990be,no_tf32_override,0,completed,1.48,65.17,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T091454734410Z-aca1a266,no_tf32_override,0,completed,1.73,56.01,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T091551054608Z-952d9281,no_tf32_override,0,completed,1.58,65.88,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T091657189007Z-2f9ddea1,default,0,numerical_failure:vi_alignment_nan_gravity,,17.16,fastba.BA(out),poses,146,False,True,after_frame:pg.poses_[:n]@146 reproject(out):coords@147 corr(out):corr@147,1,158,21,1,False,24,cuda_ba:dense,74,1,False,False,False,chol_first,1
+20261121T091714603060Z-73a7525c,default,0,completed,1.32,68.53,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T091823473290Z-f88cf1e3,default,0,numerical_failure:vi_alignment_nan_gravity,,16.8,fastba.BA(out),poses,129,False,True,after_frame:pg.poses_[:n]@129 reproject(out):coords@130 corr(out):corr@130,1,133,13,1,False,10,cuda_ba:dense,39,45,True,True,False,chol_first,1 45
+20261121T091840442557Z-850aa605,default,0,completed,1.4,69.49,,,,,,,0,1150,33,3,True,0,,,,,,,,
+20261121T091950052454Z-fa3a04b0,no_tf32_override,0,completed,1.68,55.46,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T092045939519Z-5e78126b,no_tf32_override,0,completed,1.7,75.38,,,,,,,0,1150,33,3,True,0,,,,,,,,
+20261121T092201578264Z-c1a49267,no_tf32_override,0,completed,1.91,52.8,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T092254696160Z-b6332a0d,no_tf32_override,0,completed,1.99,68.23,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T092403206440Z-602d4524,default,0,completed,1.75,52.55,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T092456382351Z-4fa23fcb,default,0,completed,1.3,66.76,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T092603362086Z-02a40556,default,0,numerical_failure:vi_alignment_nan_gravity,,18.85,fastba.BA(out),poses,173,False,True,after_frame:pg.poses_[:n]@173 reproject(out):coords@174 corr(out):corr@174,1,190,26,1,False,32,cuda_ba:dense,129,1,False,False,False,detection_first,1
+20261121T092622407996Z-95b3ae89,default,0,numerical_failure:vi_alignment_nan_gravity,,28.48,fastba.BA(out),poses,61,False,True,after_frame:pg.poses_[:n]@61 reproject(out):coords@62 corr(out):corr@62,1,64,13,1,False,6,cuda_ba:dense,103,1,False,False,False,detection_first,1
+20261121T092651154491Z-70832a68,no_tf32_override,0,completed,1.51,51.75,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T092743162066Z-1aa91e59,no_tf32_override,0,completed,1.73,68.64,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T092852107182Z-f8edacfa,no_tf32_override,0,completed,1.93,52.19,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261121T092944539505Z-9e2c5b6b,no_tf32_override,0,completed,1.44,70.12,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093054890274Z-72d07b5e,default,0,numerical_failure:vi_alignment_nan_gravity,,16.68,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,19,cuda_ba:dense,16,39,True,True,False,chol_first,1 39
+20261121T093111871171Z-f05c9302,default,0,completed,1.35,68.74,,,,,,,0,1150,30,3,True,0,,,,,,,,
+20261121T093220810370Z-d5c85bb2,default,0,numerical_failure:vi_alignment_nan_gravity,,19.05,fastba.BA(out),poses,260,False,True,after_frame:pg.poses_[:n]@260 corr(out):corr@261 network.update(in):corr@261,1,263,13,1,False,6,cuda_ba:dense,303,1,False,False,False,detection_first,1
+20261121T093240047894Z-dd7eb528,default,0,completed,1.48,65.81,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261121T093345996731Z-6f0581ed,no_tf32_override,0,completed,1.96,53.77,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093440027927Z-d9bb1470,no_tf32_override,0,completed,2.03,67.68,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093548050821Z-caac9a6d,no_tf32_override,0,completed,1.77,53.01,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093641643431Z-81b8c9ba,no_tf32_override,0,completed,1.37,69.39,,,,,,,0,1150,32,3,True,0,,,,,,,,
+20261121T093751242348Z-031cca50,default,0,numerical_failure:vi_alignment_nan_gravity,,17.37,fastba.BA(out),poses,172,False,True,after_frame:pg.poses_[:n]@172 reproject(out):coords@173 corr(out):corr@173,1,190,28,1,False,36,cuda_ba:dense,126,1,False,False,False,chol_first,1
+20261121T093809195507Z-dbf79ec8,default,0,completed,1.16,71.89,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T093921279635Z-e65f5800,default,0,numerical_failure:vi_alignment_nan_gravity,,20.21,fastba.BA(out),poses,272,False,True,after_frame:pg.poses_[:n]@272 reproject(out):coords@273 corr(out):corr@273,1,275,13,1,False,6,cuda_ba:dense,327,1,False,False,False,detection_first,1
+20261121T093941755281Z-0143f76d,default,0,completed,1.64,68.94,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T094050984709Z-4aaa1394,no_tf32_override,0,completed,2.06,51.48,,,,,,,0,1150,24,3,True,0,,,,,,,,
+20261121T094142742446Z-bdb1ec87,no_tf32_override,0,completed,1.71,66.29,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T094249308665Z-66ce0c36,no_tf32_override,0,completed,2.05,54.93,,,,,,,0,1150,24,3,True,0,,,,,,,,
+20261121T094344496645Z-74cd6c8f,no_tf32_override,0,completed,1.52,69.44,,,,,,,0,1150,30,3,True,0,,,,,,,,
+20261121T094454202597Z-3e42404d,default,0,numerical_failure:vi_alignment_nan_gravity,,18.82,fastba.BA(out),poses,166,False,True,after_frame:pg.poses_[:n]@166 reproject(out):coords@167 corr(out):corr@167,1,190,33,1,False,48,cuda_ba:dense,114,1,False,False,False,chol_first,1
+20261121T094513276495Z-16879a05,default,0,completed,1.24,66.26,,,,,,,0,1150,26,3,True,0,,,,,,,,

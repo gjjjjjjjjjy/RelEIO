@@ -1,0 +1,41 @@
+run_id,arm,gpu,outcome,mpe,wall_s,first_where,first_tensor,first_frame,first_imu_enabled,first_vi_initialized,next_detections,ba_nonfinite_from_finite_inputs,frames_completed,keyframes,vi_align_calls,vi_initialized,chol_flags,chol_first_where,chol_first_call,chol_first_info,chol_first_S_finite,chol_first_y_finite,chol_first_dX_finite,chol_vs_detection,chol_info_values
+20261121T091115326976Z-de12262d,default,0,numerical_failure:vi_alignment_nan_gravity,,16.04,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,24,cuda_ba:dense,11,39,True,True,False,chol_first,1 39
+20261121T091133818403Z-a85dd18b,default,0,numerical_failure:vi_alignment_nan_gravity,,30.47,fastba.BA(out),poses,160,False,True,after_frame:pg.poses_[:n]@160 reproject(out):coords@161 corr(out):corr@161,1,161,13,1,False,3,cuda_ba:dense,298,1,False,False,False,chol_first,1
+20261121T091204572312Z-5039d190,no_tf32_override,0,completed,1.73,53.46,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T091258307656Z-c96f567b,no_tf32_override,0,completed,1.75,65.11,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T091403565138Z-9a48a818,no_tf32_override,0,completed,1.38,51.42,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261121T091455252374Z-1d1cb8dc,no_tf32_override,0,completed,1.19,68.25,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261121T091603735553Z-656d9185,default,0,numerical_failure:vi_alignment_nan_gravity,,18.74,fastba.BA(out),poses,217,False,True,after_frame:pg.poses_[:n]@217 reproject(out):coords@218 corr(out):corr@218,1,219,13,1,False,4,cuda_ba:dense,217,1,False,False,False,detection_first,1
+20261121T091622753760Z-23098f46,default,0,completed,1.42,64.77,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T091727743045Z-671b6cf9,default,0,numerical_failure:vi_alignment_nan_gravity,,17.44,fastba.BA(out),poses,143,False,True,after_frame:pg.poses_[:n]@143 reproject(out):coords@144 corr(out):corr@144,1,158,24,1,False,30,cuda_ba:dense,69,1,False,False,False,detection_first,1
+20261121T091745329281Z-ebc69dec,default,0,completed,1.42,65.85,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261121T091851433540Z-05bb5588,no_tf32_override,0,completed,2.03,48.97,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261121T091940629768Z-dbe5f306,no_tf32_override,0,completed,1.37,66.3,,,,,,,0,1150,35,3,True,0,,,,,,,,
+20261121T092047192228Z-451f332e,no_tf32_override,0,completed,1.93,48.65,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T092136118466Z-3820739c,no_tf32_override,0,completed,1.62,66.25,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T092242640812Z-ee2fd512,default,0,numerical_failure:vi_alignment_nan_gravity,,21.27,fastba.BA(out),poses,325,False,True,after_frame:pg.poses_[:n]@325 corr(out):corr@326 network.update(in):corr@326,1,327,13,1,False,5,cuda_ba:dense,432,1,False,False,False,chol_first,1
+20261121T092304175606Z-836f5dc6,default,0,completed,1.48,63.99,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T092408449193Z-e67d83c3,default,0,numerical_failure:vi_alignment_nan_gravity,,18.06,fastba.BA(out),poses,166,False,True,after_frame:pg.poses_[:n]@166 reproject(out):coords@167 corr(out):corr@167,1,190,33,1,False,44,cuda_ba:dense,115,1,False,False,False,detection_first,1
+20261121T092426791633Z-e49844fd,default,0,completed,1.65,63.98,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T092531020908Z-dbc9f2b0,no_tf32_override,0,completed,2.08,49.71,,,,,,,0,1150,24,3,True,0,,,,,,,,
+20261121T092621015993Z-bf1d7412,no_tf32_override,0,completed,1.93,63.45,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T092724703586Z-7504e6c9,no_tf32_override,0,completed,1.75,50.05,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T092815052219Z-b11d5e00,no_tf32_override,0,completed,1.92,72.81,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T092928134504Z-b7606f03,default,0,numerical_failure:vi_alignment_nan_gravity,,16.17,fastba.BA(out),poses,121,False,False,reproject(out):coords@121 corr(out):corr@121 network.update(in):corr@121,1,126,13,1,False,21,cuda_ba:dense,14,39,True,True,False,chol_first,1 39
+20261121T092944452412Z-5523e01d,default,0,numerical_failure:vi_alignment_nan_gravity,,30.18,fastba.BA(out),poses,144,False,True,after_frame:pg.poses_[:n]@144 reproject(out):coords@145 corr(out):corr@145,1,145,13,1,False,2,cuda_ba:dense,267,1,False,False,False,detection_first,1
+20261121T093014902654Z-fd9cd747,default,0,numerical_failure:vi_alignment_nan_gravity,,16.66,fastba.BA(out),poses,147,False,True,after_frame:pg.poses_[:n]@147 reproject(out):coords@148 corr(out):corr@148,1,158,20,1,False,23,cuda_ba:dense,76,1,False,False,False,chol_first,1
+20261121T093031797778Z-afbde9b0,default,0,completed,1.69,66.49,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093138563359Z-1b9346bf,no_tf32_override,0,completed,1.98,54.39,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T093233156289Z-3c3178be,no_tf32_override,0,completed,2.01,66.75,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T093340165905Z-d8dd7e33,no_tf32_override,0,completed,1.89,50.52,,,,,,,0,1150,26,3,True,0,,,,,,,,
+20261121T093430968868Z-93f9a213,no_tf32_override,0,completed,1.44,67.1,,,,,,,0,1150,30,3,True,0,,,,,,,,
+20261121T093538345785Z-07af4751,default,0,numerical_failure:vi_alignment_nan_gravity,,17.72,fastba.BA(out),poses,160,False,True,after_frame:pg.poses_[:n]@160 reproject(out):coords@161 corr(out):corr@161,1,190,39,1,False,60,cuda_ba:dense,102,1,False,False,False,chol_first,1
+20261121T093556317559Z-305fa0cb,default,0,completed,1.61,67.06,,,,,,,0,1150,31,3,True,0,,,,,,,,
+20261121T093703665360Z-5b2a2b2b,default,0,completed,1.85,53.22,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093757168680Z-2abff1d3,default,0,completed,1.75,63.16,,,,,,,0,1150,27,3,True,0,,,,,,,,
+20261121T093900582028Z-44328f18,no_tf32_override,0,completed,2.07,55.6,,,,,,,0,1150,28,3,True,0,,,,,,,,
+20261121T093956460083Z-cd66ed0c,no_tf32_override,0,completed,1.58,66.88,,,,,,,0,1150,30,3,True,0,,,,,,,,
+20261121T094103586988Z-d561839c,no_tf32_override,0,completed,2.0,54.3,,,,,,,0,1150,25,3,True,0,,,,,,,,
+20261121T094158168436Z-7132cbcc,no_tf32_override,0,completed,1.24,65.98,,,,,,,0,1150,29,3,True,0,,,,,,,,
+20261121T094304298416Z-20d4fa54,default,0,numerical_failure:vi_alignment_nan_gravity,,19.07,fastba.BA(out),poses,157,False,True,after_frame:pg.poses_[:n]@157 reproject(out):coords@158 corr(out):corr@158,1,190,42,1,False,66,cuda_ba:dense,96,1,False,False,False,chol_first,1
+20261121T094323676852Z-f94d7caf,default,0,completed,1.95,65.47,,,,,,,0,1150,26,3,True,0,,,,,,,,

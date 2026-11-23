@@ -1,0 +1,35 @@
+<launch>
+  <!-- Headless copy of SuperEIO's supereio_ba/launch/240c.launch (commit 39bc152): the same three nodes and node
+       parameters, without the gnome-terminal launch prefixes (no display on the cluster) and without rviz.
+       detector / ba / loop start the nodes one at a time (used to build the TensorRT engines on the first run);
+       respawn_detector keeps upstream's respawn="true" by default. -->
+  <arg name="config_path"/>
+  <arg name="model_dir"/>
+  <arg name="vins_path" default="$(find event_detector)/../config/../"/>
+  <arg name="detector" default="true"/>
+  <arg name="ba" default="true"/>
+  <arg name="loop" default="true"/>
+  <arg name="respawn_detector" default="true"/>
+
+  <node if="$(arg detector)" name="event_detector" pkg="event_detector" type="event_detector" output="screen"
+        respawn="$(arg respawn_detector)">
+    <param name="config_file" type="string" value="$(arg config_path)"/>
+    <param name="vins_folder" type="string" value="$(arg vins_path)"/>
+    <param name="model_dir" type="string" value="$(arg model_dir)"/>
+    <param name="publish_framerate" type="double" value="60.0"/>
+  </node>
+
+  <node if="$(arg ba)" name="supereio_ba" pkg="supereio_ba" type="supereio_ba" output="screen">
+    <param name="config_file" type="string" value="$(arg config_path)"/>
+    <param name="vins_folder" type="string" value="$(arg vins_path)"/>
+  </node>
+
+  <node if="$(arg loop)" name="loop_closure" pkg="loop_closure" type="loop_closure" output="screen">
+    <param name="config_file" type="string" value="$(arg config_path)"/>
+    <param name="visualization_shift_x" type="int" value="0"/>
+    <param name="visualization_shift_y" type="int" value="0"/>
+    <param name="skip_cnt" type="int" value="0"/>
+    <param name="skip_dis" type="double" value="0"/>
+    <param name="model_dir" type="string" value="$(arg model_dir)"/>
+  </node>
+</launch>
