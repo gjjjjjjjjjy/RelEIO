@@ -5,7 +5,7 @@ Standard library only. Reads the records directory (see script/_layout.py):
   round4_all_attribution_*.csv         every run of the main matrix (640): arm, input condition, sequence, outcome
   deio_se3_round4_steps_*.csv          every completed run (592) scored under rules A-D
   hardware_*_details_*.csv             the replication runs on three further GPU models (40 runs each)
-  all_rounds_attribution_*.csv         every DEIO run of every round (1412), with its ledger and input condition
+  all_rounds_attribution_*.csv         the DEIO runs of every round (1412), with ledger and input condition
   imu_bias_cross_system_pinned_*.csv   the common-gyroscope-bias runs of DEIO and SuperEIO (80)
 
 Arms: "default" is the container default (TF32 override set), "no_tf32_override" is the override removed.

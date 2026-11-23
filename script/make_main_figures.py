@@ -7,7 +7,7 @@
   Fig5_bias      every run of the common-gyroscope-bias experiment, both systems, two sequences
 
 Inputs (records directory, see script/_layout.py): round4_all_attribution_*.csv, deio_se3_round4_steps_*.csv,
-imu_bias_cross_system_pinned_*.csv, all_rounds_attribution_*.csv (every DEIO run of every round, with ledger and
+imu_bias_cross_system_pinned_*.csv, all_rounds_attribution_*.csv (the DEIO runs of every round, with ledger and
 input condition; Fig. 2(b) uses its round 3A runs on the RTX 4090 and the three hardware-replication ledgers).
 
   python3 script/make_main_figures.py          # writes Fig{2,4,5}_*.pdf/.png into the figures directory

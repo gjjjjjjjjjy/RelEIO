@@ -78,10 +78,10 @@ File names do not follow the figure numbers of the paper; this table gives the c
 
 What can be recomputed from this repository alone, and what cannot:
 
-- **From the records here:** every DEIO run of the study (1412 runs in ten ledgers: the diagnostic rounds, the
+- **From the records here:** 1412 DEIO runs in ten ledgers (the diagnostic rounds, the
   precision-switch matrix, round 3A, the main matrix, the replication on three further GPU models, and DEIO's
   side of the bias experiment) and the SuperEIO runs of the bias experiment. This covers the crash counts of
-  every round and arm (Tables III and S1-S3), every number of the main matrix (reliability under rules A-D,
+  every round and arm (Tables III and S1-S3, apart from the two checks named below), every number of the main matrix (reliability under rules A-D,
   Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S4-S8 and S10,
   and all figures.
 - **Not included:** the raw run ledgers (one directory per run with the request, the recorded environment, the

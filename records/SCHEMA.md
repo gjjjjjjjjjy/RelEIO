@@ -16,7 +16,7 @@ Common values:
 
 ## All rounds (1412 runs)
 
-### `all_rounds_attribution_20261123.csv`: every DEIO run of the study
+### `all_rounds_attribution_20261123.csv`: the DEIO runs of all rounds
 Written by `script/diag/attribution_table.py` over all ledgers. Columns as in
 `round4_all_attribution_*.csv` below; the rows of the main matrix are identical in both files.
 
