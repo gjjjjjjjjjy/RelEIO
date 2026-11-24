@@ -66,12 +66,12 @@ def med(v):
 
 
 def pct(x):
-    """MPE in percent, two significant decimals below 10, otherwise three significant figures."""
+    """MPE in percent: two decimals below 10, one decimal below 100, otherwise an integer."""
     if x != x:
         return "--"
     if x < 10:
         return "%.2f" % x
-    return "%.3g" % x if x < 1000 else "%d" % round(x)
+    return "%.1f" % x if x < 99.95 else "%d" % round(x)
 
 
 def half_up(x):
@@ -81,7 +81,8 @@ def half_up(x):
 
 def ci(t):
     d, lo, hi = t
-    return "$%+d$ [$%+d$, $%+d$]" % (half_up(100 * d), half_up(100 * lo), half_up(100 * hi))
+    sign = lambda v: "0" if v == 0 else "%+d" % v                      # noqa: E731  (no signed zero)
+    return "$%s$ [$%s$, $%s$]" % tuple(sign(half_up(100 * v)) for v in (d, lo, hi))
 
 
 def write(name, body):
@@ -361,7 +362,7 @@ for sysname in ("DEIO", "SuperEIO"):
 write("supp_bias.tex", r"""\begin{table}[H]
   \centering
   \caption{Common gyroscope bias $(+5, -5, +5)^\circ$/s: rule~D error (\%) of every run on the common time window,
-  sorted, and the median ratio of travelled distance over one-second windows (estimate / ground truth).}
+  sorted, and the median ratio of traveled distance over one-second windows (estimate / ground truth).}
   \label{stab:bias}
   \footnotesize
   \begin{tabular}{@{}lllp{0.52\linewidth}c@{}}

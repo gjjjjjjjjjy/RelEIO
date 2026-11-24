@@ -51,10 +51,10 @@ Written by `script/diag/attribution_table.py`.
 | `wall_s` | wall time of the run in seconds, tracer included |
 | `ba_tf32` | whether TF32 matrix multiplication was on inside the visual bundle adjustment, as read in the process |
 | `first_where`, `first_tensor`, `first_frame` | checkpoint, tensor, and frame at which the tracer first detected a non-finite value |
-| `first_imu_enabled`, `first_vi_initialized` | whether IMU factors were in use, and whether the visual-inertial alignment had completed, at that detection |
+| `first_imu_enabled`, `first_vi_initialized` | whether IMU factors were in use, and whether the visual-only initialization had completed, at that detection (the second name is historical: it does not refer to the visual-inertial alignment) |
 | `next_detections` | the following detections |
 | `ba_nonfinite_from_finite_inputs` | calls of the visual bundle adjustment that returned a non-finite output from finite input |
-| `frames_completed`, `keyframes`, `vi_align_calls`, `vi_initialized` | progress counters of the run |
+| `frames_completed`, `keyframes`, `vi_align_calls`, `vi_initialized` | progress of the run: frames, keyframes, calls of the visual-inertial alignment, and whether that alignment completed (IMU factors in use at the end) |
 | `chol_flags` | number of Cholesky factorizations that reported a failure |
 | `chol_first_where`, `chol_first_call`, `chol_first_info` | site, call index, and status code of the first such report |
 | `chol_first_S_finite`, `chol_first_y_finite`, `chol_first_dX_finite` | whether the Schur complement, the right-hand side, and the solution were finite at that report |

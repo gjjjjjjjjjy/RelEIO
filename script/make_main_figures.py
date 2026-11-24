@@ -62,7 +62,7 @@ def save(fig, name):
 
 
 def panel(ax, s):
-    ax.text(-0.02, 1.02, s, transform=ax.transAxes, fontsize=8, fontweight="bold", ha="right", va="bottom")
+    ax.text(-0.02, 1.06, s, transform=ax.transAxes, fontsize=8, fontweight="bold", ha="right", va="bottom")
 
 
 # ---------------------------------------------------------------- Fig. 2: numerical environment
@@ -84,7 +84,7 @@ for i, (cell, lab) in enumerate(CELLS):
             a.text(i + dx - 0.12, 100 * k / 80, "%d" % k, fontsize=6.3, ha="right", va="center", color=ns.INK)
 a.set_xticks(range(4))
 a.set_xticklabels([l for _, l in CELLS], fontsize=7)
-a.set_xlim(-0.55, 3.55)
+a.set_xlim(-0.80, 3.55)                                    # room for the count left of the first marker
 a.set_ylim(-3, 100)
 a.set_ylabel("runs with a crash (%)")
 a.yaxis.grid(True, color=ns.GREY_FAINT, lw=0.4)
@@ -116,9 +116,10 @@ b.set_yticks(y)
 b.set_yticklabels([g for g, _, _ in gpus], fontsize=6.5)
 b.set_xlim(0, 13)
 b.set_xticks([0, 5, 10])
-b.set_ylim(-0.95, len(gpus) - 0.4)
+b.set_ylim(-1.25, len(gpus) - 0.4)
 b.set_xlabel("failures in 10 runs")
-b.text(12.6, -0.72, "override removed: 0 in every cell", fontsize=6.0, color=C_OFF, ha="right", va="center")
+b.text(12.6, -0.82, "override removed:\n0 in every cell", fontsize=6.0, color=C_OFF, ha="right", va="center",
+       linespacing=1.15)
 panel(b, "(b)")
 fig.subplots_adjust(left=0.13, right=0.98, bottom=0.17, top=0.92)
 save(fig, "Fig2_numerics")
