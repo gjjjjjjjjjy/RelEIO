@@ -131,7 +131,7 @@ for rule, paper in zip(RULES, (3, 3, 0, 69)):
 check("override removed: rule D error below the stationary baseline", sum(float(r["se3_all"]) < float(r["gt_spread"]) for r in off), 173)
 spread = [float(r["gt_spread"]) for r in steps]
 check("ground-truth spread of the completed runs: smallest / largest (% of the path length) / largest at most 4.05",
-      ("%.1f" % min(spread), "%.1f" % max(spread), max(spread) <= 4.05), ("0.4", "4.0", True))
+      ("%.2f" % min(spread), "%.2f" % max(spread), max(spread) <= 4.05), ("0.37", "4.05", True))
 hidden = collections.Counter((r["scene"].split("/")[1], r["cell"]) for r in off if float(r["se3_all"]) > 100 and float(r["deio_rule"]) <= 10)
 check("override removed: above the path length under rule D and within 10% under rule A, boxes_6dof / all sequences",
       (sum(v for (q, _), v in hidden.items() if q == "boxes_6dof"), sum(hidden.values())), (37, 62))
