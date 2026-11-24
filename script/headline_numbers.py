@@ -139,6 +139,17 @@ check("  on poster_6dof and shapes_6dof / of these under timestamp quantization"
       (sum(v for (q, _), v in hidden.items() if q in ("poster_6dof", "shapes_6dof")),
        sum(v for (q, c), v in hidden.items() if q in ("poster_6dof", "shapes_6dof") and c == "tq:10000")), (22, 13))
 check("  on desk_normal1 (rule A does not report the ground-truth spread there)", sum(v for (q, _), v in hidden.items() if q == "desk_normal1"), 0)
+rule_a = [float(r["deio_rule"]) for r in off if r["scene"].startswith("rpgdavis/") and float(r["se3_all"]) > 100]
+check("override removed, DAVIS240C runs above the path length under rule D: runs / rule A smallest, largest (%) / at most 1%",
+      (len(rule_a), "%.2f" % min(rule_a), "%.2f" % max(rule_a), sum(x <= 1 for x in rule_a)), (59, "0.48", "1.92", 58))
+same = lambda scene: sum((float(r["deio_rule"]) <= 10) == (float(r["se3_all"]) <= 10) for r in off if r["scene"] == scene)   # noqa: E731
+check("override removed: runs with the same verdict of rules A and D at 10%, TUM-VIE / HKU (of 40)",
+      (same("tumvie/mocap-3d-trans"), same("hku/vicon_dark1")), (40, 39))
+box = {arm: [statistics.median(float(r["deio_rule"]) for r in by_arm[arm] if r["scene"] == "rpgdavis/boxes_6dof" and r["cell"] == c) for c in CELLS]
+       for arm in ARMS}
+check("boxes_6dof, rule A medians over the four input conditions (%): override removed / both arms",
+      ("%.2f-%.2f" % (min(box["no_tf32_override"]), max(box["no_tf32_override"])),
+       "%.2f-%.2f" % (min(box["default"] + box["no_tf32_override"]), max(box["default"] + box["no_tf32_override"]))), ("0.73-0.80", "0.73-0.82"))
 
 print("\nTable IV: runs within 10% per input condition, of 80 (removed D / A; default D / A / crashes)")
 table4 = {"clean": (67, 79, 63, 70, 10), "keep:0.1": (47, 75, 26, 57, 19), "tq:10000": (56, 80, 55, 74, 6), "patch:16": (57, 79, 51, 66, 13)}
