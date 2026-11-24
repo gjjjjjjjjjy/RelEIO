@@ -254,7 +254,7 @@ for ledger, name, pd, pc in [("round3a_", "RTX 4090", 8, 1), ("hardware_l40s_", 
 check("  total with the override: reduced event density, clean", "%d/40, %d/40" % (tot["d"], tot["c"]), "33/40, 7/40")
 mem = lambda arm: statistics.median(float(r["peak_reserved_mb"]) for r in allr   # noqa: E731
                                     if r["ledger"].startswith("precision_pilot_") and r["arm"] == arm and r["outcome"] == "completed")
-check("  reserved GPU memory, default / full FP32 (MB, round 1)", "%.0f / %.0f" % (mem("default"), mem("fp32_strict")), "2114 / 4744")
+check("  reserved GPU memory, default / full FP32 (MiB, round 1)", "%.0f / %.0f" % (mem("default"), mem("fp32_strict")), "2114 / 4744")
 
 print("\nCommon gyroscope bias (rule D on the common time window)")
 bias = one("imu_bias_cross_system_pinned_*.csv")

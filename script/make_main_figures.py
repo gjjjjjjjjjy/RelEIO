@@ -118,7 +118,7 @@ b.set_xlim(0, 13)
 b.set_xticks([0, 5, 10])
 b.set_ylim(-1.25, len(gpus) - 0.4)
 b.set_xlabel("failures in 10 runs")
-b.text(12.6, -0.82, "override removed:\n0 in every cell", fontsize=6.0, color=C_OFF, ha="right", va="center",
+b.text(12.6, -0.82, "override removed:\n0 on every GPU", fontsize=6.0, color=C_OFF, ha="right", va="center",
        linespacing=1.15)
 panel(b, "(b)")
 fig.subplots_adjust(left=0.13, right=0.98, bottom=0.17, top=0.92)

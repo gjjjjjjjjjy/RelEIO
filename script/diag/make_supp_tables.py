@@ -267,7 +267,8 @@ write("supp_accuracy.tex", r"""\begin{table}[H]
   \caption{Accuracy per input condition and arm, ten runs each. $\le$10\%, $\le$100\%: runs completed with a
   rule~D error at most $10\%$ or $100\%$ of the path length (crashes count as not within); D, A: median MPE (\%)
   of completed runs under rules~D and~A;
-  $s<0.5$: completed runs with a small fitted Sim(3) scale (below $0.5$), which accompanies a collapsed fit but
+  $s<0.5$: completed runs with a small scale (below $0.5$) of the similarity alignment fitted on all matched
+  poses (rule~C), which accompanies a collapsed fit but
   does not by itself establish one (Section~\ref{ss:simfit}).}
   \label{stab:accuracy}
   \footnotesize

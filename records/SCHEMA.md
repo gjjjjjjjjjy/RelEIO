@@ -61,7 +61,7 @@ Written by `script/diag/attribution_table.py`.
 | `chol_vs_detection` | whether the first Cholesky report came before (`chol_first`) or after (`detection_first`) the first detection in the log |
 | `chol_info_values` | the status codes reported |
 | `ledger` | name of the ledger the run belongs to |
-| `peak_alloc_mb`, `peak_reserved_mb` | peak memory of the PyTorch allocator |
+| `peak_alloc_mb`, `peak_reserved_mb` | peak memory of the PyTorch allocator, in MiB (bytes / 2^20; the column names say mb for historical reasons) |
 | `device_mem_mib` | largest device-memory sample of the process (every 30 s; a lower bound of the peak) |
 
 `round4_main_all_details_20261121_023641.csv` holds the same runs without the last eight columns
