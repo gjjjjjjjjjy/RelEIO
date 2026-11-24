@@ -74,9 +74,14 @@ def pct(x):
     return "%.3g" % x if x < 1000 else "%d" % round(x)
 
 
+def half_up(x):
+    """Round to an integer with halves away from zero (12.5 -> 13), as the text of the paper does."""
+    return int(math.copysign(math.floor(abs(x) + 0.5), x))
+
+
 def ci(t):
     d, lo, hi = t
-    return "$%+.0f$ [$%+.0f$, $%+.0f$]" % (100 * d, 100 * lo, 100 * hi)
+    return "$%+d$ [$%+d$, $%+d$]" % (half_up(100 * d), half_up(100 * lo), half_up(100 * hi))
 
 
 def write(name, body):
@@ -158,7 +163,7 @@ for s, c, it in excl:
 print("groups excluding 0: %d of 24" % len(excl))
 write("supp_interactions.tex", r"""\begin{table}[H]
   \centering
-  \caption{Interaction between the numerical arm and each degradation, per sequence and axis (24 groups fixed
+  \caption{Interaction between the numerical arm and each stress axis, per sequence (24 groups fixed
   before the run, all reported). Columns give the difference between arms (percentage points, Newcombe $95\%$
   interval) at the strongest level and on clean input, and their difference with the MOVER $95\%$ interval.
   $^{*}$: interval excludes zero.}
@@ -230,9 +235,13 @@ print("\n== accuracy per condition")
 t = {(r["sequence"], r["cell"], r["setting"]): r for r in se3tab}
 assert len(t) == 64
 within10 = collections.Counter()
-for r in rows(one("deio_se3_round4_steps_*.csv")):
+scores = collections.defaultdict(lambda: {"D": [], "A": []})   # medians from the per-run scores: the derived
+for r in rows(one("deio_se3_round4_steps_*.csv")):             # table holds them to three decimals only
+    k = (r["scene"], r["cell"], r["arm"])
+    scores[k]["D"].append(float(r["se3_all"]))
+    scores[k]["A"].append(float(r["deio_rule"]))
     if float(r["se3_all"]) <= 10:
-        within10[(r["scene"], r["cell"], r["arm"])] += 1
+        within10[k] += 1
 lines = []
 for s, sname in SEQ.items():
     for c, cname in CELL.items():
@@ -240,9 +249,10 @@ for s, sname in SEQ.items():
         for a in ARMS:
             r = t[(s, c, a)]
             cells += ["%d" % within10[(s, c, a)], "%s" % r["completed_se3_le_100"],
-                      pct(float(r["median_se3_mpe"])) if r["median_se3_mpe"] else "--",
-                      pct(float(r["median_rule_a_mpe"])) if r["median_rule_a_mpe"] else "--",
+                      pct(med(scores[(s, c, a)]["D"])), pct(med(scores[(s, c, a)]["A"])),
                       r["sim3_scale_below_0p5"]]
+            for rule, col in (("D", "median_se3_mpe"), ("A", "median_rule_a_mpe")):
+                assert not r[col] or abs(med(scores[(s, c, a)][rule]) - float(r[col])) < 6e-4, (s, c, a, rule)
         lines.append("%s & %s & %s \\\\" % (sname if c == "clean" else "", cname, " & ".join(cells)))
     lines.append("\\addlinespace")
 for a in ARMS:

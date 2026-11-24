@@ -67,6 +67,21 @@ def newcombe(k1, n1, k2, n2):
     return 100 * d, 100 * (d - math.sqrt((p2 - l2) ** 2 + (u1 - p1) ** 2)), 100 * (d + math.sqrt((u2 - p2) ** 2 + (p1 - l1) ** 2))
 
 
+def newcombe_paired(e, f, g, h):
+    """Newcombe interval for the difference of two paired proportions (1998, method 10), in percentage points.
+    e: both, f: first only, g: second only, h: neither; the difference is first minus second."""
+    n = e + f + g + h
+    p1, p2 = (e + f) / n, (e + g) / n
+    l1, u1 = wilson(e + f, n)
+    l2, u2 = wilson(e + g, n)
+    a = (e + f) * (g + h) * (e + g) * (f + h)
+    b = e * h - f * g
+    phi = 0.0 if a == 0 else (b - n / 2 if b > n / 2 else 0.0 if b >= 0 else b) / math.sqrt(a)
+    lo = math.sqrt((p1 - l1) ** 2 - 2 * phi * (p1 - l1) * (u2 - p2) + (u2 - p2) ** 2)
+    hi = math.sqrt((u1 - p1) ** 2 - 2 * phi * (u1 - p1) * (p2 - l2) + (p2 - l2) ** 2)
+    return 100 * (p1 - p2), 100 * (p1 - p2 - lo), 100 * (p1 - p2 + hi)
+
+
 def pct(lo, hi):
     return "[%d, %d]" % (round(100 * lo), round(100 * hi))
 
@@ -93,6 +108,9 @@ for cell, paper in zip(CELLS, (10, 19, 6, 13)):
     check("crashes, default, %s" % cell, "%d/80" % k, "%d/80" % paper)
 check("sequences with a crash (default)", len({r["scene"] for r in att if r["arm"] == "default" and crashed(r)}), 8)
 check("completed runs with a score", len(steps), 592)
+check("visual-inertial alignment completed: completed runs / crashed runs",
+      (sum(r["vi_initialized"] == "True" for r in att if r["outcome"] == "completed"), sum(r["vi_initialized"] == "True" for r in att if crashed(r))),
+      (592, 0))
 check("  all of them are completed runs of the matrix", {r["run"] for r in steps} == {r["run_id"] for r in att if r["outcome"] == "completed"}, True)
 
 print("\nReliability: runs within a tolerance, of 320 per arm")
@@ -111,6 +129,16 @@ check("override removed: pass rule D and fail rule A at 10%", sum(float(r["se3_a
 for rule, paper in zip(RULES, (3, 3, 0, 69)):
     check("override removed: runs above the path length, rule %s" % rule, sum(float(r[RULES[rule]]) > 100 for r in off), paper)
 check("override removed: rule D error below the stationary baseline", sum(float(r["se3_all"]) < float(r["gt_spread"]) for r in off), 173)
+spread = [float(r["gt_spread"]) for r in steps]
+check("ground-truth spread of the completed runs: smallest / largest (% of the path length) / largest at most 4.05",
+      ("%.1f" % min(spread), "%.1f" % max(spread), max(spread) <= 4.05), ("0.4", "4.0", True))
+hidden = collections.Counter((r["scene"].split("/")[1], r["cell"]) for r in off if float(r["se3_all"]) > 100 and float(r["deio_rule"]) <= 10)
+check("override removed: above the path length under rule D and within 10% under rule A, boxes_6dof / all sequences",
+      (sum(v for (q, _), v in hidden.items() if q == "boxes_6dof"), sum(hidden.values())), (37, 62))
+check("  on poster_6dof and shapes_6dof / of these under timestamp quantization",
+      (sum(v for (q, _), v in hidden.items() if q in ("poster_6dof", "shapes_6dof")),
+       sum(v for (q, c), v in hidden.items() if q in ("poster_6dof", "shapes_6dof") and c == "tq:10000")), (22, 13))
+check("  on desk_normal1 (rule A does not report the ground-truth spread there)", sum(v for (q, _), v in hidden.items() if q == "desk_normal1"), 0)
 
 print("\nTable IV: runs within 10% per input condition, of 80 (removed D / A; default D / A / crashes)")
 table4 = {"clean": (67, 79, 63, 70, 10), "keep:0.1": (47, 75, 26, 57, 19), "tq:10000": (56, 80, 55, 74, 6), "patch:16": (57, 79, 51, 66, 13)}
@@ -143,6 +171,11 @@ check("  median paired difference of the rule D error (pp)",
       "%.3f" % statistics.median(score["no_tf32_override"][k] - score["default"][k] for k in both), "-0.001")
 lost = [k for k in score["no_tf32_override"] if k not in score["default"]]        # the seeds whose default run crashed
 check("crashed with the override", len(lost), 48)
+keys = set(score["no_tf32_override"]) | set(score["default"])                    # every sequence, input condition and seed
+cd, cr = keys - set(score["default"]), keys - set(score["no_tf32_override"])     # crashed with / without the override
+d, dl, du = newcombe_paired(len(cd & cr), len(cd - cr), len(cr - cd), len(keys - cd - cr))
+check("  crash difference between arms over %d pairs (pp), Newcombe interval for paired proportions" % len(keys),
+      "%d [%d, %d]" % (round(d), round(dl), round(du)), "15 [11, 19]")
 check("  of these, within 10% without the override", sum(score["no_tf32_override"][k] <= 10 for k in lost), 35)
 check("every condition has ten seeds per arm among completed + crashed runs",
       all({r["seed"] for r in off if (r["scene"], r["cell"]) == sc} == set(SEEDS) for sc in {(r["scene"], r["cell"]) for r in off}), True)
@@ -158,6 +191,7 @@ for tag, name, paper in [("l40s", "L40S", 10), ("h200", "H200", 10), ("h100", "H
 print("\nAll rounds (%d runs in all_rounds_attribution_*.csv)" % len(one("all_rounds_attribution_*.csv")))
 allr = one("all_rounds_attribution_*.csv")
 check("runs / distinct run ids", (len(allr), len({r["run_id"] for r in allr})), (1412, 1412))
+check("outcomes other than completed / numerical failure (all rounds)", sum(not (crashed(r) or r["outcome"] == "completed") for r in allr), 0)
 check("main-matrix rows identical to round4_all_attribution_*.csv",
       {r["run_id"]: r for r in allr if r["ledger"].startswith("round4_")} == {r["run_id"]: r for r in att}, True)
 
