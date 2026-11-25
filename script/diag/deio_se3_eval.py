@@ -10,6 +10,11 @@ Changing one thing at a time, from DEIO's rule to the scale-free rule (error ove
   B sim3_1000_20ms Sim(3) fitted on the first 1000 poses, matching within 20 ms      (A->B: matching only)
   C sim3_all       Sim(3) fitted on all poses, matching within 20 ms                 (B->C: fit window only)
   D se3_all        SE(3) fitted on all poses, matching within 20 ms                  (C->D: scale only)
+  se3_first5s      SE(3) fitted on the poses of the first 5 s of the estimate (counted from its first pose, not from
+                   its first matched pose) that match the ground truth within 20 ms; None (not scorable) if fewer
+                   than 10 of them match. Errors over all matched poses:
+                   the protocol DEIO's paper states for its DAVIS240C and Mono-HKU tables (arXiv 2411.03928,
+                   Sec. IV-A, Tables I-II), which its released evaluation code (rule A) does not implement
 Every completed run is listed: one without a trajectory file, or with fewer than 10 matched poses, is counted as
 "no score" in its group and in the total, never as a pass.
   sim3_scale  scale of a Sim(3) fit on all matched poses (near 0 = collapsed)
@@ -20,6 +25,8 @@ of the trajectory (rows t_us x y z qx qy qz qw):
   rpgdavis data/RPGDAVIS_pp/<s>/mocap_data.txt (t > 0)        vector data/VECtor/<s>/poses_evs_left.txt
   hku      data/HKU/<s>/gt_stamped_davis346.txt               tumvie data/TUM-VIE/<s>/mocap_data.txt (unit by magnitude, t > 0)
   fpv      data/UZHFPV/<s>/stamped_groundtruth_us.txt
+  rpgdavis_up data/DAVIS240C_upstream/<s>/gt_stamped_left.txt  (DEIO's own DAVIS240C preprocessing, pp_davis240c.py;
+                                                                time relative to the first event/image/pose)
 DEIO's rule fits on the first 1000 poses for every dataset except UZH-FPV, where it uses all (_n_to_align=-1).
 
   python3 script/diag/deio_se3_eval.py --ledgers logs/ledger/round4_core_main_all_20261121_023641 \\
@@ -46,7 +53,8 @@ _spec.loader.exec_module(ET)
 
 GT_FILES = {"rpgdavis": ("data/RPGDAVIS_pp", "mocap_data.txt"), "vector": ("data/VECtor", "poses_evs_left.txt"),
             "hku": ("data/HKU", "gt_stamped_davis346.txt"), "tumvie": ("data/TUM-VIE", "mocap_data.txt"),
-            "fpv": ("data/UZHFPV", "stamped_groundtruth_us.txt")}
+            "fpv": ("data/UZHFPV", "stamped_groundtruth_us.txt"),
+            "rpgdavis_up": ("data/DAVIS240C_upstream", "gt_stamped_left.txt")}
 N_ALIGN = {"fpv": None}   # None = all poses
 
 
@@ -104,6 +112,11 @@ def evaluate(traj, gt, n_align=1000):
     s3, R3, t3 = ET.umeyama(A, B, True)
     out["sim3_all"], out["sim3_scale"] = err(s3, R3, t3), float(s3)
     out["se3_all"] = err(*ET.umeyama(A, B, False))
+    first5 = (t_e[ok] - t_e[0]) / 1e6 <= 5.0   # matched poses within 5 s of the FIRST ESTIMATE pose (not first match)
+    out["se3_first5s"] = err(*ET.umeyama(A[first5], B[first5], False)) if first5.sum() >= 10 else None
+    out["matched_first5s"] = int(first5.sum())
+    out["matched_20ms"] = int(ok.sum())
+    out["estimates"] = int(len(t_e))
     out["gt_spread"] = float(np.linalg.norm(B - B.mean(0), axis=1).mean() / path * 100)
     te = t_e[ok]
     k = np.searchsorted(te, te + 1e6)
@@ -129,6 +142,8 @@ def main():
     a = ap.parse_args()
     gts, rows = {}, []
     for ld in a.ledgers:
+        if not os.path.isfile(os.path.join(ld, "ledger.jsonl")):
+            sys.exit("ERROR: no ledger at %s (ledger.jsonl missing)" % ld)
         for r in run_ledger.load_ledger(ld):
             lab = r["labels"]
             ds, sc = lab.get("dataset"), str(lab.get("scene")).split("/")[-1]
@@ -144,6 +159,8 @@ def main():
                 "ok" if np.isfinite(m.get("se3_all", np.nan)) else "no score")
             rows.append(dict(ledger=os.path.basename(ld.rstrip("/")), scene="%s/%s" % (ds, sc), cell=lab.get("cell"),
                              arm=lab.get("arm"), seed=lab.get("seed"), run=r["run_id"], ledger_mpe=r.get("mpe"), **m))
+    if not rows:
+        sys.exit("ERROR: no completed run of the requested scenes in %s" % " ".join(a.ledgers))
     groups = collections.defaultdict(list)
     for x in rows:
         groups[(x["ledger"][:28], x["scene"], x["cell"], x["arm"])].append(x)

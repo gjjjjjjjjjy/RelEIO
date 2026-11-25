@@ -7,6 +7,10 @@ Standard library only. Reads the records directory (see script/_layout.py):
   hardware_*_details_*.csv             the replication runs on three further GPU models (40 runs each)
   all_rounds_attribution_*.csv         the DEIO runs of every round (1412), with ledger and input condition
   imu_bias_cross_system_pinned_*.csv   the common-gyroscope-bias runs of DEIO and SuperEIO (80)
+  davis_pipelines_scores_*.csv         DAVIS240C read by DEIO's own pipeline and by our data-loading layer (40)
+  deio_round4_scores_paper_rule_*.csv  the completed runs (592) with the rigid first-5-s alignment added
+  scoring_faults_*.csv                 known faults injected into the ground truth of the eight sequences
+  crt_round4_*.csv                     the correct rate (OpenLORIS) of every run of the main matrix (640)
 
 Arms: "default" is the container default (TF32 override set), "no_tf32_override" is the override removed.
 Rules: A = DEIO's evaluation code (deio_rule), B = A with 20 ms matching (sim3_1000_20ms), C = B fitted on all
@@ -277,6 +281,51 @@ check("  largest similarity-alignment error of the 80 runs (%)", "%.2f" % max(fl
 print("\nScoring limit (similarity alignment fitted on all scored poses)")
 check("every rule C error of the 592 completed runs at most 50% of the path length",
       all(float(r["sim3_all"]) <= 50 for r in steps), True)
+
+print("\nDAVIS240C: DEIO's own pipeline against our data-loading layer (clean, override removed, seeds 2000-2009)")
+pipe = one("davis_pipelines_scores_*.csv")
+check("runs, all scored", (len(pipe), all(r["score"] == "ok" for r in pipe)), (40, True))
+unit = lambda ds, seq: [r for r in pipe if r["scene"] == "%s/%s" % (ds, seq)]   # noqa: E731
+check("rule D above the path length: boxes DEIO's own / ours, poster DEIO's own / ours",
+      tuple(sum(float(r["se3_all"]) > 100 for r in unit(ds, seq))
+            for seq in ("boxes_6dof", "poster_6dof") for ds in ("rpgdavis_up", "rpgdavis")), (0, 10, 0, 0))
+pmed = lambda ds, seq, k: "%.2f" % statistics.median(float(r[k]) for r in unit(ds, seq))   # noqa: E731
+check("  rule A median with DEIO's own pipeline, boxes / poster (%)",
+      (pmed("rpgdavis_up", "boxes_6dof", "deio_rule"), pmed("rpgdavis_up", "poster_6dof", "deio_rule")), ("0.08", "0.08"))
+check("  rigid first-5-s alignment, DEIO's own pipeline, boxes / poster (%)",
+      (pmed("rpgdavis_up", "boxes_6dof", "se3_first5s"), pmed("rpgdavis_up", "poster_6dof", "se3_first5s")),
+      ("1.51", "0.47"))
+check("  main matrix, same seeds, our layer: boxes runs above the path length under rule D",
+      sum(float(r["se3_all"]) > 100 for r in steps if r["arm"] == "no_tf32_override" and r["cell"] == "clean"
+          and r["scene"] == "rpgdavis/boxes_6dof" and r["seed"] in SEEDS), 9)
+pr = [r for r in one("deio_round4_scores_paper_rule_*.csv") if r["arm"] == "no_tf32_override" and r["cell"] == "clean"
+      and r["scene"] == "hku/vicon_dark1"]
+check("  HKU, our layer: rule A / rigid first-5-s median (%)",
+      ("%.2f" % statistics.median(float(r["deio_rule"]) for r in pr),
+       "%.2f" % statistics.median(float(r["se3_first5s"]) for r in pr)), ("0.06", "0.50"))
+
+print("\nKnown faults injected into the ground truth (8 sequences)")
+flt = one("scoring_faults_*.csv")
+fnum = lambda x: float(x) if x not in ("", "nan", "None") else float("nan")   # noqa: E731
+check("readings above 10% for stationary, frozen, and rescaled estimates, any rule",
+      sum(fnum(r[k]) > 10 for r in flt if r["fault"] in ("stationary", "freeze", "scale0.5", "scale2")
+          for k in ("A", "C", "D", "first5s")), 0)
+check("  exponential divergence flagged at 10%: rule D / rule A (of 8 sequences)",
+      tuple(sum(fnum(r[k]) > 10 for r in flt if r["fault"] == "diverge200") for k in ("D", "A")), (8, 2))
+check("  readings above the path length, any fault and rule",
+      sum(fnum(r[k]) > 100 for r in flt for k in ("A", "C", "D", "first5s")), 0)
+
+print("\nCorrect rate (OpenLORIS, position criterion, one rigid alignment) on the runs of the main matrix")
+crt = [r for r in one("crt_round4_*.csv") if r["arm"] == "no_tf32_override"]
+ab = [float(r["CR_10"]) for r in crt if float(r["rule_A"]) <= 10 < float(r["rule_D"])]
+win = [float(r["CR_10"]) for r in crt if float(r["rule_D"]) <= 10]
+check("override removed, 10%: runs within under A but beyond under D, their median CR, max",
+      (len(ab), "%.2f" % statistics.median(ab), "%.2f" % max(ab)), (86, "0.00", "0.51"))
+check("  median CR of the runs within 10% under rule D", "%.2f" % statistics.median(win), "0.89")
+ori = [r for r in one("crt_round4_*.csv") if r["crt_status"] == "ok" and float(r["rule_D"]) <= 10]
+check("  orientation check (both arms, rule D within 10%): runs, median error, median offset spread (deg)",
+      (len(ori), "%.1f" % statistics.median(float(r["aoe_median_deg_xyzw"]) for r in ori),
+       "%.1f" % statistics.median(float(r["offset_spread_deg_xyzw"]) for r in ori)), (422, "76.5", "4.3"))
 
 print("\n%d quantities checked, %d mismatch%s%s" % (rows_checked, len(mismatches), "" if len(mismatches) == 1 else "es",
                                                    (": " + "; ".join(mismatches)) if mismatches else ""))

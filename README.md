@@ -23,7 +23,7 @@ Python 3.9 or later, standard library only:
 python3 script/headline_numbers.py
 ```
 
-The script recomputes 107 quantities from the records and prints each next to the value stated in the paper; it exits
+The script recomputes 119 quantities from the records and prints each next to the value stated in the paper; it exits
 with status 1 if any differs. Among them:
 
 | Result | Value | Records |
@@ -33,7 +33,9 @@ with status 1 if any differs. Among them:
 | Runs that pass rule A and fail rule D at 10% / the reverse | 86 / 0 | same |
 | Runs above the path length under rules A, C, D | 3, 0, 69 | same |
 | Precision switches (Table III): crashes with TF32 matrix multiplication on / off inside the bundle adjustment | 8/16, 8/16 / 0/16, 0/16, 0/16 | `all_rounds_attribution_*.csv` |
-| Four GPU models under reduced event density / clean input, with the override (Table S3) | 33/40 / 7/40; 0/40 without it | same |
+| Four GPU models under reduced event density / clean input, with the override (Table S4) | 33/40 / 7/40; 0/40 without it | same |
+| DAVIS240C `boxes_6dof`, clean, override removed: runs above the path length under rule D with DEIO's own pipeline / our data-loading layer (Table S1) | 0/10 / 10/10 | `davis_pipelines_scores_*.csv` |
+| Correct rate of OpenLORIS (10% of the path length) of the 86 runs that pass rule A and fail rule D (Table S10) | median 0.00 | `crt_round4_*.csv` |
 
 ## Regenerate the figures and tables
 
@@ -46,7 +48,7 @@ python3 script/diag/round4_reliability.py \
     --scores records/deio_se3_round4_steps_20261121.csv --outdir output     # Fig. 2, per-condition table
 python3 script/make_main_figures.py      # Fig. 3, Fig. 4, Fig. S1
 python3 script/make_supp_figures.py      # Fig. S2, Fig. S3
-python3 script/diag/make_supp_tables.py  # Tables S4-S8 and S10, and the numbers the text quotes from them
+python3 script/diag/make_supp_tables.py  # Tables S1, S5-S11, S13, S14, and the numbers the text quotes from them
 ```
 
 File names do not follow the figure numbers of the paper; this table gives the correspondence.
@@ -59,8 +61,8 @@ File names do not follow the figure numbers of the paper; this table gives the c
 | Fig. 4 | `output/figures/Fig5_bias.pdf` | gyroscope-bias runs of DEIO and SuperEIO |
 | Fig. S1 | `output/figures/Fig2_numerics.pdf` | main matrix; panel (b): round 3A and the three GPU-replication ledgers |
 | Fig. S2, S3 | `output/figures/FigS1_*.pdf`, `FigS2_*.pdf` | main matrix |
-| Tables III, IV, S1-S3 | printed and checked by `script/headline_numbers.py` | all rounds |
-| Tables S4-S8, S10 | `output/tables/supp_*.tex` | main matrix, GPU replication, bias runs |
+| Tables III, IV, S2-S4 | printed and checked by `script/headline_numbers.py` | all rounds |
+| Tables S1, S5-S11, S13, S14 | `output/tables/supp_*.tex` | main matrix, DAVIS240C pipelines, known faults, correct rate, bias runs |
 
 ## Contents
 
@@ -68,7 +70,7 @@ File names do not follow the figure numbers of the paper; this table gives the c
 |---|---|
 | `records/` | per-run records; columns in [`records/SCHEMA.md`](records/SCHEMA.md), checksums in `records/SHA256SUMS` |
 | `script/headline_numbers.py`, `script/make_*.py`, `script/diag/round4_reliability.py`, `script/diag/make_supp_tables.py` | analysis: numbers, figures, supplementary tables |
-| `script/diag/` | protocol code: run ledger (`run_ledger.py`), launchers of the precision arms and of the main matrix (`precision_pilot.py`, `precision_matrix.py`, `run_round*.sh`, `run_hardware.sh`, `run_imu_bias.sh`), control verification and input comparison (`compare_inputs.py`, `check_env.py`, `check_imu_units.py`), extraction of the records from the ledgers (`attribution_table.py`, `pilot_details.py`), scoring under rules A-D (`deio_se3_eval.py`, `cross_system_eval.py`), and the run plans of the main matrix, fixed before execution (`plans/`) |
+| `script/diag/` | protocol code: run ledger (`run_ledger.py`), launchers of the precision arms and of the main matrix (`precision_pilot.py`, `precision_matrix.py`, `run_round*.sh`, `run_hardware.sh`, `run_imu_bias.sh`), control verification and input comparison (`compare_inputs.py`, `check_env.py`, `check_imu_units.py`), extraction of the records from the ledgers (`attribution_table.py`, `pilot_details.py`), scoring under rules A-D (`deio_se3_eval.py`, `cross_system_eval.py`), checks of the scoring rules with known faults and the correct rate of OpenLORIS (`scoring_checks.py`, `compare_rescore.py`), the comparison of DEIO's own DAVIS240C pipeline with ours (`prep_davis_upstream.sh`, `run_davis_pipelines.sh`, `check_davis_pipelines.py`, and `script/pp_data/pp_davis240c_from_converted.py`, which writes DEIO's input files from the text release of the recordings), and the run plans of the main matrix, fixed before execution (`plans/`) |
 | `script/run_*_sweep.py`, `script/stress_evidence.py` | runners that the launchers call, and the check of the realized degradation of each run |
 | `utils/sensor_stress.py`, [`docs/SENSOR_STRESS_OPERATORS.md`](docs/SENSOR_STRESS_OPERATORS.md) | degradation operators and their definition |
 | `utils/numtrace.py` | numerical tracer: first non-finite tensor, status of each Cholesky factorization |
@@ -81,14 +83,15 @@ What can be recomputed from this repository alone, and what cannot:
 
 - **From the records here:** 1412 DEIO runs in ten ledgers (the diagnostic rounds, the
   precision-switch matrix, round 3A, the main matrix, the replication on three further GPU models, and DEIO's
-  side of the bias experiment) and the SuperEIO runs of the bias experiment. This covers the crash counts of
+  side of the bias experiment), the SuperEIO runs of the bias experiment, and the 40 runs that compare DEIO's own
+  DAVIS240C pipeline with ours. This covers the crash counts of
   every round and arm (Tables III and S1-S3, apart from the two checks named below), every number of the main matrix (reliability under rules A-D,
-  Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S4-S8 and S10,
-  and all figures.
+  Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S1 and S5-S14
+  except S12, and all figures.
 - **Not included:** the raw run ledgers (one directory per run with the request, the recorded environment, the
   input fingerprints, the tracer output, the log, and the trajectory), from which the records were extracted with
-  the scripts above; two small checks of Table S1 that are outside the extracted records (the eight untraced runs
-  of round 1 and the voxel-cache check); and the logs of the single SuperEIO runs on clean input, which Table S9
+  the scripts above; two small checks of Table S2 that are outside the extracted records (the eight untraced runs
+  of round 1 and the voxel-cache check); and the logs of the single SuperEIO runs on clean input, which Table S12
   summarizes.
 - **The estimator is not included.** The launchers run inside a checkout of DEIO with our data-loading layer and
   with the probe hooks that call `utils/numtrace.py`; the supplementary material of the paper describes its

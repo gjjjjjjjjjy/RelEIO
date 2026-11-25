@@ -88,7 +88,8 @@ def front_load_inputs(jobs, cached):
 # binary-search loader is an estimate. Unknown scenes count as 200 s.
 SEQ_COST_S = {"vector/desk_normal1": 191, "vector/corner_slow1": 72, "hku/vicon_dark1": 235,
               "tumvie/mocap-3d-trans": 355, "fpv/indoor_forward_3": 95, "rpgdavis/boxes_6dof": 90,
-              "rpgdavis/poster_6dof": 90, "rpgdavis/shapes_6dof": 60}
+              "rpgdavis/poster_6dof": 90, "rpgdavis/shapes_6dof": 60,
+              "rpgdavis_up/boxes_6dof": 90, "rpgdavis_up/poster_6dof": 90}
 
 
 def part_of_scenes(jobs, n):

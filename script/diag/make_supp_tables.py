@@ -411,3 +411,150 @@ write("supp_bias_rescore.tex", r"""\begin{table}[H]
   \end{tabular}
 \end{table}
 """)
+
+# ---- Table: DAVIS240C read by DEIO's own pipeline and by our data-loading layer (comparison of data pipelines) -------
+# script/diag/run_davis_pipelines.sh: 4 units x 10 seeds, clean input, override removed, one RTX 4090.
+# Published values: DEIO (arXiv 2411.03928 v4), Table I (DAVIS240C) and Table II (HKU), MPE in %.
+PUBLISHED = {"boxes_6dof": 0.05, "poster_6dof": 0.08, "vicon_dark1": 0.05}
+
+
+def num(x):
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return math.nan
+    return v if math.isfinite(v) else math.nan
+
+
+print("\n== DAVIS240C: DEIO's own pipeline against our data-loading layer")
+pipe = rows(one("davis_pipelines_scores_*.csv"))
+assert len(pipe) == 40 and all(r["score"] == "ok" for r in pipe), "40 scored runs expected"
+lines = []
+for seq in ("boxes_6dof", "poster_6dof"):
+    for ds, name in (("rpgdavis_up", "DEIO's own"), ("rpgdavis", "ours")):
+        rs = [r for r in pipe if r["scene"] == "%s/%s" % (ds, seq)]
+        assert len(rs) == 10 and sorted(int(r["seed"]) for r in rs) == list(range(2000, 2010))
+        A, C, Dd, F = ([num(r[k]) for r in rs] for k in ("deio_rule", "sim3_all", "se3_all", "se3_first5s"))
+        above = sum(d > 100 for d in Dd)
+        flip = sum(a <= 10 < d for a, d in zip(A, Dd))
+        m = [med(v) for v in (A, C, Dd, F)]
+        print("%-12s %-11s D above the path length %2d/10 | A<=10%% but D>10%% %2d | medians A %s C %s D %s first5s %s"
+              " | D range %s-%s | first-5-s matched poses %s"
+              % (seq, name, above, flip, *[pct(x) for x in m], pct(min(Dd)), pct(max(Dd)),
+                 sorted({r["matched_first5s"] for r in rs})))
+        lines.append("%s & %s & %d & %d & %s & %s & %s & %s & %s \\\\" % (
+            seq.replace("_", "\\_") if ds == "rpgdavis_up" else "", name, above, flip, *[pct(x) for x in m],
+            ("%.2f" % PUBLISHED[seq]) if ds == "rpgdavis_up" else ""))
+    lines.append("\\addlinespace")
+# the same seeds of the main matrix (our layer, clean, override removed), for the reproduction on another machine
+for seq in ("boxes_6dof", "poster_6dof"):
+    rs = [r for r in steps if r["arm"] == "no_tf32_override" and r["cell"] == "clean" and r["scene"] == "rpgdavis/" + seq]
+    print("main matrix, %-11s ours: D above the path length %d/%d, median D %s, median A %s, seeds %s"
+          % (seq, sum(num(r["se3_all"]) > 100 for r in rs), len(rs), pct(med([num(r["se3_all"]) for r in rs])),
+             pct(med([num(r["deio_rule"]) for r in rs])), sorted(int(r["seed"]) for r in rs) == list(range(2000, 2010))))
+# HKU (our entry script; no upstream one): rule A against the rigid first-5-s alignment, from the rescoring with the first-5-s rigid rule
+paper_rule = rows(one("deio_round4_scores_paper_rule_*.csv"))
+rs = [r for r in paper_rule if r["arm"] == "no_tf32_override" and r["cell"] == "clean" and r["scene"] == "hku/vicon_dark1"]
+print("HKU vicon_dark1 (ours, clean, override removed, %d runs): median A %s, first5s %s, published %.2f"
+      % (len(rs), pct(med([num(r["deio_rule"]) for r in rs])), pct(med([num(r["se3_first5s"]) for r in rs])),
+         PUBLISHED["vicon_dark1"]))
+write("supp_pipelines.tex", r"""\begin{table}[H]
+  \centering
+  \caption{DAVIS240C on clean input with the override removed, read by DEIO's own preprocessing, entry script, and
+  configuration and by our data-loading layer: ten runs per row (seeds $2000$--$2009$, one RTX 4090), all
+  completed. Runs whose rule~D error exceeds the path length ($>L$), runs within $10\%$ under rule~A but not under
+  rule~D (A only), median MPE (\%) under rules A, C, and D and under a rigid alignment on the first $5$\,s of the
+  estimate, and the value DEIO reports~\cite{guan2025deio}.}
+  \label{stab:pipelines}
+  \footnotesize
+  \begin{tabular}{@{}llccccccc@{}}
+    \toprule
+    Sequence & Pipeline & $>L$ & A only & A & C & D & First $5$\,s & Reported \\
+    \midrule
+""" + "\n".join("    " + x for x in lines[:-1]) + r"""
+    \bottomrule
+  \end{tabular}
+\end{table}
+""")
+
+# ---- Table: known faults injected into the ground truth ----------------------------------------------------------
+print("\n== known faults (ground truth of the 8 sequences at 20 Hz with an injected fault)")
+faults = rows(one("scoring_faults_*.csv"))
+FAULT_NAMES = collections.OrderedDict([
+    ("none", "none"), ("rigid", "rigid motion ($30^\\circ$, $1$\\,m)"), ("scale0.5", "scale $\\times0.5$"),
+    ("scale2", "scale $\\times2$"), ("drift2", "drift to $2\\%$"), ("drift20", "drift to $20\\%$"),
+    ("diverge200", "divergence to $200\\%$"), ("stationary", "stationary"), ("freeze", "frozen at mid-time")])
+assert len(faults) == 8 * len(FAULT_NAMES) and {r["fault"] for r in faults} == set(FAULT_NAMES)
+lines, above100 = [], 0
+for fa, name in FAULT_NAMES.items():
+    rs = [r for r in faults if r["fault"] == fa]
+    cells = []
+    for k in ("A", "C", "D", "first5s"):
+        v = [num(r[k]) for r in rs]
+        ok = [x for x in v if x == x]
+        above100 += sum(x > 100 for x in ok)
+        if not ok:
+            cells.append("n/c")
+            continue
+        assert len(ok) == len(v), "a fault computable on some sequences only"
+        cells.append("%s (%d, %d)" % (pct(med(ok)), sum(x > 1 for x in ok), sum(x > 10 for x in ok)))
+    cr = [med([num(r[k]) for r in rs]) for k in ("CR_1", "CR_10")]
+    print("%-11s %s | CR median %.2f / %.2f" % (fa, " | ".join(cells), *cr))
+    lines.append("%s & %s & %.2f & %.2f \\\\" % (name, " & ".join(cells), *cr))
+print("readings above 100%% under any rule: %d" % above100)
+write("supp_faults.tex", r"""\begin{table}[H]
+  \centering
+  \caption{Known faults injected into the ground truth of the eight sequences (sampled at $20$\,Hz), scored by every
+  rule: median MPE (\%) over the sequences and, in parentheses, the sequences of eight whose reading exceeds $1\%$
+  and $10\%$ of the path length; median correct rate (CR) at $\varepsilon = 1\%$ and $10\%$. No reading exceeds
+  the path length. n/c: not computable (no scale can be fitted to a stationary estimate).}
+  \label{stab:faults}
+  \footnotesize
+  \begin{tabular}{@{}lccccc@{\hspace{4pt}}c@{}}
+    \toprule
+    Fault & Rule A & Rule C & Rule D & First $5$\,s & CR $1\%$ & CR $10\%$ \\
+    \midrule
+""" + "\n".join("    " + x for x in lines) + r"""
+    \bottomrule
+  \end{tabular}
+\end{table}
+""")
+
+# ---- Table: correct rate of OpenLORIS against rule D on the same runs ---------------------------------------------
+print("\n== correct rate (position criterion, one rigid alignment) against rule D")
+crt = rows(one("crt_round4_*.csv"))
+assert len(crt) == 640
+lines = []
+for arm, aname in (("no_tf32_override", "removed"), ("default", "default")):
+    rs = [r for r in crt if r["arm"] == arm]
+    ok = [r for r in rs if r["crt_status"] == "ok"]
+    print("%s: %d runs, CR computed %d, not computable %d" % (arm, len(rs), len(ok), len(rs) - len(ok)))
+    for i, eps in enumerate((10, 1)):
+        key = "CR_%d" % eps
+        groups = (("within", [r for r in ok if num(r["rule_D"]) <= eps]),
+                  ("beyond", [r for r in ok if num(r["rule_D"]) > eps]),
+                  ("beyond, A within", [r for r in ok if num(r["rule_A"]) <= eps < num(r["rule_D"])]))
+        for j, (gname, g) in enumerate(groups):
+            v = sorted(num(r[key]) for r in g)
+            print("  eps %2d%%  rule D %-16s %3d runs: CR median %.2f, 10th-90th percentile %.2f-%.2f, range %.2f-%.2f"
+                  % (eps, gname, len(v), med(v), R4.q(v, 0.1), R4.q(v, 0.9), v[0], v[-1]))
+            lines.append("%s & %s & %s & %d & %.2f & %.2f--%.2f \\\\" % (
+                aname if i == 0 and j == 0 else "", ("$%d\\%%$" % eps) if j == 0 else "", gname, len(v), med(v),
+                R4.q(v, 0.1), R4.q(v, 0.9)))
+        lines.append("\\addlinespace")
+write("supp_crt.tex", r"""\begin{table}[H]
+  \centering
+  \caption{Correct rate (CR) of the completed runs of the main matrix, grouped by whether the rule~D error is within
+  the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D); last group: within under rule~A, beyond
+  under rule~D. The $48$ crashed runs of the default arm have no trajectory, so their CR is not computable.}
+  \label{stab:crt}
+  \footnotesize
+  \begin{tabular}{@{}lllccc@{}}
+    \toprule
+    Override & $\varepsilon$ & Rule~D & Runs & CR median & 10th--90th pct. \\
+    \midrule
+""" + "\n".join("    " + x for x in lines[:-1]) + r"""
+    \bottomrule
+  \end{tabular}
+\end{table}
+""")

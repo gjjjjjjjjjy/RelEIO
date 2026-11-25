@@ -43,6 +43,10 @@ DATASETS = {
     "rpgdavis":("script/eval_deio/mvsec.py",    "config/mvsec.yaml",   "data/RPGDAVIS_pp", ["shapes_6dof", "boxes_6dof", "poster_6dof"],
                 ['--scene_suffix', '', '--t_imu_cam_identity', '--H', '180', '--W', '240']),
     "fpv":     ("script/eval_deio/uzh-fpv.py",  "config/uzhfpv.yaml",  "data/UZHFPV",  ["indoor_forward_3"], []),
+    # DEIO's own DAVIS240C pipeline (upstream preprocessing pp_davis240c.py, entry and config), used only in the
+    # comparison of data pipelines (script/diag/run_davis_pipelines.sh), not in the sweeps
+    "rpgdavis_up": ("script/eval_deio/davis240c.py", "config/davis240c.yaml", "data/DAVIS240C_upstream",
+                    ["boxes_6dof", "poster_6dof"], []),
 }
 KEEPS = ["1.0", "0.5", "0.3", "0.1"]
 SEEDS = [1000, 1001, 1002, 1003, 1004]

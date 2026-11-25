@@ -96,6 +96,46 @@ Written by `script/diag/deio_se3_eval.py` from the saved trajectories. The 48 cr
 Output of `script/diag/compare_inputs.py` on the ledger of the main matrix: the input fingerprints of the 24
 distinct inputs, compared across arms and seeds.
 
+### `deio_round4_scores_paper_rule_20261125.csv`: the same 592 runs with a further rigid rule
+Written by `script/diag/deio_se3_eval.py`; `script/diag/compare_rescore.py` checks that every run and its rules A-D equal
+`deio_se3_round4_steps_20261121.csv`. Added columns:
+
+| Column | Meaning |
+|---|---|
+| `se3_first5s` | SE(3) fitted on the matched poses within 5 s of the first estimated pose, error over all matched poses |
+| `matched_20ms`, `matched_first5s` | matched poses (20 ms), and those within the first 5 s |
+| `estimates` | poses in the saved trajectory |
+
+### `scoring_faults_20261125.csv`: known faults injected into the ground truth, 72 rows
+Written by `script/diag/scoring_checks.py faults`. One row per sequence (`sequence`) and fault (`fault`: `none`,
+`rigid` (yaw 30 deg, shift 1 m), `scale0.5`, `scale2`, `drift2`, `drift20` (linear from mid-time to 2% or 20% of the
+path length), `diverge200` (exponential from mid-time to 200%), `stationary` (the first pose throughout), `freeze`
+(the mid-time pose from then on)). `A`, `C`, `D`, `first5s`: MPE (% of the path length) under rules A, C, D and the
+rigid first-5-s rule, empty if not computable; `CR_1`, `CR_10`: correct rate at 1% and 10%.
+
+### `crt_round4_20261125.csv`: correct rate of every run of the main matrix, 640 rows
+Written by `script/diag/scoring_checks.py crt`. CR follows OpenLORIS (Shi et al., ICRA 2020, Eq. 2) with one rigid
+alignment of the whole trajectory and the position criterion only.
+
+| Column | Meaning |
+|---|---|
+| `run`, `arm`, `cell`, `scene`, `seed`, `ledger`, `outcome` | identification and outcome |
+| `crt_status` | `ok`, or `not computable (...)` for a crashed run without trajectory |
+| `CR_1`, `CR_10` | correct rate at 1% and 10% of the path length: correct time (each pose at most 1 s) over the ground-truth time span |
+| `CRT_1`, `CRT_10` | the same over the time span from the first estimate (Eq. 3) |
+| `rule_A`, `rule_D` | MPE under rules A and D, as in `deio_se3_round4_steps_20261121.csv` |
+| `aoe_median_deg_xyzw`, `aoe_median_deg_wxyz` | median orientation error after the rigid alignment, estimate quaternion read as x y z w (the file format) or w x y z |
+| `offset_spread_deg_xyzw`, `offset_spread_deg_wxyz`, `offset_spread_deg` | median angle of the per-pose rotation between estimate and ground truth from its mean (`offset_spread_deg` = `_xyzw`) |
+| `unmatched` | estimated poses without a ground-truth pose within 20 ms (counted as incorrect) |
+
+## Comparison of DAVIS240C data pipelines (40 runs)
+
+`davis_pipelines_scores_20261125_093426.csv`: columns as `deio_round4_scores_paper_rule_20261125.csv`. `scene` is
+`rpgdavis_up/<sequence>` for DEIO's own preprocessing, entry script and configuration, and `rpgdavis/<sequence>` for
+our data-loading layer (as in the main matrix); `boxes_6dof` and `poster_6dof`, clean input, override removed, seeds
+2000-2009, one RTX 4090. `davis_pipelines_details_20261125_093426.csv`: the same runs with the columns of
+`round4_main_all_details_20261121_023641.csv` (written by `script/diag/pilot_details.py`).
+
 ## Replication on three further GPU models (40 runs each)
 
 `hardware_l40s_*`, `hardware_h200_*`, `hardware_h100_*_details_*.csv`: VECtor `corner_slow1` under event density
