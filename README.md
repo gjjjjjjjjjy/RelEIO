@@ -4,7 +4,7 @@ RelEIO is a repeated-run protocol for measuring how reliably a learned event-ine
 delivers a usable trajectory, together with the per-run records of a study of two systems (DEIO and SuperEIO) and
 the code that produced and analyzes them. It accompanies the paper
 
-> **Reliability Measurement of Learned Event-Inertial Odometry: Numerical, Runtime, and Scoring Effects Beyond Sensing Degradation**
+> **Reliability Measurement of Learned Event-Inertial Odometry: Effects of Numerical Precision and Trajectory Scoring**
 > Jiaying Guo, Zhengjie Wang, Wenxing Long, and Jun Ying (corresponding author: junying@shnu.edu.cn)
 
 The protocol treats a reported trajectory error as a measurement result whose conditions must be stated:
