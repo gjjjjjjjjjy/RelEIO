@@ -460,8 +460,8 @@ print("HKU vicon_dark1 (ours, clean, override removed, %d runs): median A %s, fi
          PUBLISHED["vicon_dark1"]))
 write("supp_pipelines.tex", r"""\begin{table}[H]
   \centering
-  \caption{DAVIS240C on clean input with the override removed, read by DEIO's own preprocessing, entry script, and
-  configuration and by our data-loading layer: ten runs per row (seeds $2000$--$2009$, one RTX 4090), all
+  \caption{DAVIS240C on clean input with the override removed, read by DEIO's own entry script, loader, and
+  configuration (input files rebuilt from the same recordings) and by our data-loading layer: ten runs per row (seeds $2000$--$2009$, one RTX 4090), all
   completed. Runs whose rule~D error exceeds the path length ($>L$), runs within $10\%$ under rule~A but not under
   rule~D (A only), median MPE (\%) under rules A, C, and D and under a rigid alignment on the first $5$\,s of the
   estimate, and the value DEIO reports~\cite{guan2025deio}.}
@@ -544,7 +544,7 @@ for arm, aname in (("no_tf32_override", "removed"), ("default", "default")):
         lines.append("\\addlinespace")
 write("supp_crt.tex", r"""\begin{table}[H]
   \centering
-  \caption{Correct rate (CR) of the completed runs of the main matrix, grouped by whether the rule~D error is within
+  \caption{Position-only correct rate (CR) of the completed runs of the main matrix, grouped by whether the rule~D error is within
   the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D); last group: within under rule~A, beyond
   under rule~D. The $48$ crashed runs of the default arm have no trajectory, so their CR is not computable.}
   \label{stab:crt}

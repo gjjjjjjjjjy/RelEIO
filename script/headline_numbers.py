@@ -312,11 +312,21 @@ check("readings above 10% for stationary, frozen, and rescaled estimates, any ru
           for k in ("A", "C", "D", "first5s")), 0)
 check("  exponential divergence flagged at 10%: rule D / rule A (of 8 sequences)",
       tuple(sum(fnum(r[k]) > 10 for r in flt if r["fault"] == "diverge200") for k in ("D", "A")), (8, 2))
+check("  late divergence within 10%: rule C / rule D (of 8 sequences)",
+      tuple(sum(fnum(r[k]) <= 10 for r in flt if r["fault"] == "diverge200") for k in ("C", "D")), (8, 0))
+check("  stationary estimate: within 10% under rule D, not computable under rule A / rule C",
+      (sum(fnum(r["D"]) <= 10 for r in flt if r["fault"] == "stationary"),
+       sum(fnum(r["A"]) != fnum(r["A"]) for r in flt if r["fault"] == "stationary"),
+       sum(fnum(r["C"]) != fnum(r["C"]) for r in flt if r["fault"] == "stationary")), (8, 8, 8))
 check("  readings above the path length, any fault and rule",
       sum(fnum(r[k]) > 100 for r in flt for k in ("A", "C", "D", "first5s")), 0)
 
 print("\nCorrect rate (OpenLORIS, position criterion, one rigid alignment) on the runs of the main matrix")
-crt = [r for r in one("crt_round4_*.csv") if r["arm"] == "no_tf32_override"]
+crt_all = one("crt_round4_*.csv")
+check("runs with a correct rate / without a trajectory (crashed)",
+      (sum(r["crt_status"] == "ok" for r in crt_all), sum(r["crt_status"] != "ok" and r["outcome"] != "completed"
+                                                       for r in crt_all)), (592, 48))
+crt = [r for r in crt_all if r["arm"] == "no_tf32_override"]
 ab = [float(r["CR_10"]) for r in crt if float(r["rule_A"]) <= 10 < float(r["rule_D"])]
 win = [float(r["CR_10"]) for r in crt if float(r["rule_D"]) <= 10]
 check("override removed, 10%: runs within under A but beyond under D, their median CR, max",
