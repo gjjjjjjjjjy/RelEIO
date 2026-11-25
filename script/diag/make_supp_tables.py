@@ -368,7 +368,8 @@ for sysname in ("DEIO", "SuperEIO"):
 write("supp_bias.tex", r"""\begin{table}[H]
   \centering
   \caption{Gyroscope bias of $(+5, -5, +5)^\circ$/s on both systems: rule~D error (\%) of every run on the common time window,
-  sorted, and the median ratio of traveled distance over one-second windows (estimate / ground truth).}
+  sorted, and the median ratio of the straight-line distance between poses one second apart (estimate / ground truth;
+  pairs with a ground-truth distance above $5$\,cm).}
   \label{stab:bias}
   \footnotesize
   \begin{tabular}{@{}lllp{0.52\linewidth}c@{}}

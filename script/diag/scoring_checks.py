@@ -17,9 +17,9 @@ crt     the correct rate (CR, Eq. 2 of OpenLORIS, arXiv 1911.05603) and CR-T (Eq
         the marker frame of the ground truth); each correct pose counts for at most delta = 1 s; CR divides by the ground-truth time span, CR-T
         by the span from the first estimate. Estimates without a ground-truth pose within 20 ms count as incorrect.
         Crashed runs have no trajectory; they are listed with CR "not computable", never dropped or set to zero.
-        Orientation convention check: the median orientation error of every run is reported
-        with the estimate quaternion read as xyzw (the file format) and as wxyz; the convention must give small
-        errors on accurate runs before the 30 deg threshold is used.
+        Orientation, observation only: the median orientation error of every run is reported with the estimate
+        quaternion read as xyzw (the file format) and as wxyz. The orientation conventions were not verified
+        independently, so no orientation criterion is applied and only position-based correct rates are reported.
 
   python3 script/diag/scoring_checks.py faults --out records/scoring_faults_<date>.csv
   python3 script/diag/scoring_checks.py crt --ledgers logs/ledger/round4_core_main_all_20261121_023641 \\
@@ -86,10 +86,10 @@ def readings(est, gt, n_align):
 
 
 def correct_rate(est, gt, eps_pct, quat_order="xyzw", use_orientation=False):
-    """CR (Eq. 2) and CR-T (Eq. 3) of OpenLORIS; the median orientation error (deg) and, as a diagnostic, how far the
-    per-pose rotation offset between estimate and ground truth spreads around its mean (deg). A small spread with a
-    large error means a constant frame difference (estimate: IMU body; ground truth: motion-capture marker), not a
-    tracking error. The orientation criterion is applied only with use_orientation (no calibration between the frames)."""
+    """CR (Eq. 2) and CR-T (Eq. 3) of OpenLORIS; the median orientation error (deg) and how far the per-pose rotation
+    offset between estimate and ground truth spreads around its mean (deg), reported as observations only: the
+    orientation conventions of estimate and ground truth were not verified independently. The orientation criterion is
+    applied only with use_orientation (off for every reported correct rate, which uses positions only)."""
     o = np.argsort(gt[:, 0])
     g = gt[o]
     path = float(np.linalg.norm(np.diff(g[:, 1:4], axis=0), axis=1).sum())
@@ -178,7 +178,7 @@ def run_faults(out_path):
         for rule in ("A", "C", "D", "first5s"):
             v = [r[rule] for r in rs]
             fin = sorted(x for x in v if x is not None)
-            med = "%.3g" % fin[len(fin) // 2] if fin else "-"
+            med = "%.3g" % float(np.median(fin)) if fin else "-"
             cls = []
             for tol in TOLS:
                 n_f = sum(x is not None and x > tol for x in v)

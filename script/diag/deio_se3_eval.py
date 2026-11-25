@@ -18,7 +18,8 @@ Changing one thing at a time, from DEIO's rule to the scale-free rule (error ove
 Every completed run is listed: one without a trajectory file, or with fewer than 10 matched poses, is counted as
 "no score" in its group and in the total, never as a pass.
   sim3_scale  scale of a Sim(3) fit on all matched poses (near 0 = collapsed)
-  dist_ratio  median of |dp_est| / |dp_gt| over pose pairs 1 s apart (no alignment; 1 = metric scale)
+  dist_ratio  median of |dp_est| / |dp_gt| over pose pairs 1 s apart, where dp is the straight-line displacement
+              between the two poses; pairs with |dp_gt| <= 5 cm are left out (no alignment; 1 = metric scale)
   gt_spread   mean distance of the matched ground truth from its mean / path length (what a collapsed fit returns)
 Ground truth: the file DEIO's evaluation script reads for the run, loaded the same way, so it shares the time base
 of the trajectory (rows t_us x y z qx qy qz qw):
