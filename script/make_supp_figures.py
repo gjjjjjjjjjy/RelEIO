@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Figures of the supplementary material, drawn from the committed per-run CSV files of the round-4 main matrix.
 
-  FigS1_reliability_per_sequence  R(eps) per sequence (40 runs per arm: 4 conditions x 10 seeds), both arms,
+  FigS1_reliability_per_sequence  R-bar(eps) per sequence (40 runs per arm: 4 test conditions x 10 seeds), both arms,
                                   scale-free SE(3) rule (solid) and rule A of DEIO's evaluation code (dashed)
   FigS2_runs                      every run: SE(3) MPE of completed runs and numerical failures (crosses on
                                   top), per sequence, condition and arm
@@ -78,7 +78,7 @@ for ax, (key, title) in zip(axes.flat, SEQ):
 for ax in axes[1]:
     ax.set_xlabel("tolerance on MPE (%)")
 for ax in axes[:, 0]:
-    ax.set_ylabel(r"$R(\varepsilon)$, 40 runs")
+    ax.set_ylabel(r"$\bar{R}(\varepsilon)$, 40 runs")
 fig.legend(handles=[Line2D([], [], color=C_OFF, lw=1.0, label="override removed"),
                     Line2D([], [], color=C_DEF, lw=1.0, label="container default"),
                     Line2D([], [], color=ns.INK, lw=1.0, label="rule D (SE(3), no scale)"),

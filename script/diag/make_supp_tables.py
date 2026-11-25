@@ -130,14 +130,15 @@ print("total default %d/320 Wilson [%.1f, %.1f]%%; removed %d/320 upper %.1f%%; 
 pooled.append("all & all & %d/320 & %d/320 & %s \\\\" % (kd, ko, ci(R4.newcombe(kd, 320, ko, 320))))
 write("supp_crashes.tex", r"""\begin{table}[H]
   \centering
-  \caption{Numerical failures in the round-4 main matrix per sequence and condition, ten runs per arm (seeds
-  2000--2009). Difference: default minus override removed, in percentage points, with Newcombe's $95\%$ interval.
-  Pooled rows weight every condition equally.}
+  \caption{Crashes in the main matrix per sequence and test condition, ten runs per arm (seeds 2000--2009).
+  Difference: container default minus override removed, in percentage points, with Newcombe's hybrid score $95\%$
+  interval for independent proportions~\cite{newcombe1998difference}. Pooled rows weight every test condition
+  equally.}
   \label{stab:crashes}
   \footnotesize
   \begin{tabular}{@{}llccc@{}}
     \toprule
-    Sequence & Condition & Default & Override removed & Difference [$95\%$ CI] \\
+    Sequence & Test condition & Container default & Override removed & Difference [$95\%$ CI] \\
     \midrule
 """ + "\n".join("    " + x for x in lines[:-1]) + "\n    \\midrule\n" + "\n".join("    " + x for x in pooled) + r"""
     \bottomrule
@@ -165,8 +166,10 @@ print("groups excluding 0: %d of 24" % len(excl))
 write("supp_interactions.tex", r"""\begin{table}[H]
   \centering
   \caption{Interaction between the numerical arm and each stress axis, per sequence (24 groups fixed
-  before the run, all reported). Columns give the difference between arms (percentage points, Newcombe $95\%$
-  interval) at the strongest level and on clean input, and their difference with the MOVER $95\%$ interval.
+  before the run, all reported). Columns give the difference in crash share between arms (container default minus
+  override removed, percentage points, Newcombe's $95\%$ interval for independent proportions) at the stress level
+  of the axis ($\rho = 0.1$, $\tau = 10$\,ms, $P = 16$) and on clean input, and the difference of the two with the
+  MOVER $95\%$ interval.
   $^{*}$: interval excludes zero.}
   \label{stab:interactions}
   \footnotesize
@@ -209,21 +212,23 @@ for name, rs in hw:
     Lall = location(rs)
     print("%-36s %s; Cholesky flags in completed runs of both arms: %d/%d"
           % (name, L, Lall["chol_c"], Lall["comp"]))
-    lines.append("%s & %d/%d & %d & %d & %d & %d & %d & %d/%d \\\\" % (
-        name, L["fail"], L["runs"], L["ba"], L["noimu"], L["chol_f"], L["chol_finite"], L["chol_first"],
-        Lall["chol_c"], Lall["comp"]))
+    assert L["chol_f"] <= L["fail"] and L["chol_finite"] <= L["chol_f"]
+    lines.append("%s & %d/%d & %d & %d & %d & %d & %d & %d & %d/%d \\\\" % (
+        name, L["fail"], L["runs"], L["ba"], L["noimu"], L["chol_finite"], L["chol_f"] - L["chol_finite"],
+        L["fail"] - L["chol_f"], L["chol_first"], Lall["chol_c"], Lall["comp"]))
 write("supp_location.tex", r"""\begin{table}[H]
   \centering
   \caption{Where the crashes start (container default arm). BA: first non-finite value detected at the output of
-  the visual bundle adjustment; no IMU: before the visual-inertial alignment had added IMU factors; Cholesky: the
-  factorization of the dense Schur complement reported a failure; finite $\mathbf{S}$: at its first report the
-  Schur complement was still finite; before detection: the first report preceded the first detection. Last
-  column: completed runs of both arms with any Cholesky report.}
+  the visual bundle adjustment; no IMU: before the visual-inertial alignment had added IMU factors. The next three
+  columns split the crashes by the Cholesky factorization of the dense Schur complement $\mathbf{S}$: it reported a
+  failure while $\mathbf{S}$ was still finite; it reported one on an already non-finite $\mathbf{S}$; it reported
+  none. Report first: crashes of the first two groups whose first report preceded the first detection. Last column:
+  completed runs of both arms with any Cholesky report.}
   \label{stab:location}
   \footnotesize
-  \begin{tabular}{@{}lccccccc@{}}
+  \begin{tabular}{@{}lcccccccc@{}}
     \toprule
-    Machine & Crashes & BA & No IMU & Cholesky & Finite $\mathbf{S}$ & Before detection & Cholesky, completed \\
+    Machine & Crashes & BA & No IMU & $\mathbf{S}$ finite & $\mathbf{S}$ non-finite & No report & Report first & Cholesky, completed \\
     \midrule
 """ + "\n".join("    " + x for x in lines) + r"""
     \bottomrule
@@ -264,7 +269,7 @@ for a in ARMS:
         for s in SEQ)))
 write("supp_accuracy.tex", r"""\begin{table}[H]
   \centering
-  \caption{Accuracy per input condition and arm, ten runs each. $\le$10\%, $\le$100\%: runs completed with a
+  \caption{Accuracy per test condition and arm, ten runs each. $\le$10\%, $\le$100\%: runs completed with a
   rule~D error at most $10\%$ or $100\%$ of the path length (crashes count as not within); D, A: median MPE (\%)
   of completed runs under rules~D and~A;
   $s<0.5$: completed runs with a small scale (below $0.5$) of the similarity alignment fitted on all matched
@@ -277,7 +282,7 @@ write("supp_accuracy.tex", r"""\begin{table}[H]
     \toprule
     & & \multicolumn{5}{c}{Container default} & \multicolumn{5}{c@{}}{Override removed} \\
     \cmidrule(lr){3-7}\cmidrule(l){8-12}
-    Sequence & Condition & $\le$10\% & $\le$100\% & D & A & $s<0.5$ & $\le$10\% & $\le$100\% & D & A & $s<0.5$ \\
+    Sequence & Test condition & $\le$10\% & $\le$100\% & D & A & $s<0.5$ & $\le$10\% & $\le$100\% & D & A & $s<0.5$ \\
     \midrule
 """ + "\n".join("    " + x for x in lines[:-1]) + r"""
     \bottomrule
@@ -362,7 +367,7 @@ for sysname in ("DEIO", "SuperEIO"):
         lines.append("\\addlinespace")
 write("supp_bias.tex", r"""\begin{table}[H]
   \centering
-  \caption{Common gyroscope bias $(+5, -5, +5)^\circ$/s: rule~D error (\%) of every run on the common time window,
+  \caption{Gyroscope bias of $(+5, -5, +5)^\circ$/s on both systems: rule~D error (\%) of every run on the common time window,
   sorted, and the median ratio of traveled distance over one-second windows (estimate / ground truth).}
   \label{stab:bias}
   \footnotesize
@@ -525,7 +530,7 @@ print("\n== correct rate (position criterion, one rigid alignment) against rule 
 crt = rows(one("crt_round4_*.csv"))
 assert len(crt) == 640
 lines = []
-for arm, aname in (("no_tf32_override", "removed"), ("default", "default")):
+for arm, aname in (("no_tf32_override", "override removed"), ("default", "container default")):
     rs = [r for r in crt if r["arm"] == arm]
     ok = [r for r in rs if r["crt_status"] == "ok"]
     print("%s: %d runs, CR computed %d, not computable %d" % (arm, len(rs), len(ok), len(rs) - len(ok)))
@@ -533,7 +538,7 @@ for arm, aname in (("no_tf32_override", "removed"), ("default", "default")):
         key = "CR_%d" % eps
         groups = (("within", [r for r in ok if num(r["rule_D"]) <= eps]),
                   ("beyond", [r for r in ok if num(r["rule_D"]) > eps]),
-                  ("beyond, A within", [r for r in ok if num(r["rule_A"]) <= eps < num(r["rule_D"])]))
+                  ("of which A within", [r for r in ok if num(r["rule_A"]) <= eps < num(r["rule_D"])]))
         for j, (gname, g) in enumerate(groups):
             v = sorted(num(r[key]) for r in g)
             print("  eps %2d%%  rule D %-16s %3d runs: CR median %.2f, 10th-90th percentile %.2f-%.2f, range %.2f-%.2f"
@@ -545,13 +550,14 @@ for arm, aname in (("no_tf32_override", "removed"), ("default", "default")):
 write("supp_crt.tex", r"""\begin{table}[H]
   \centering
   \caption{Position-only correct rate (CR) of the completed runs of the main matrix, grouped by whether the rule~D error is within
-  the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D); last group: within under rule~A, beyond
-  under rule~D. The $48$ crashed runs of the default arm have no trajectory, so their CR is not computable.}
+  the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D). Within and beyond together are the completed
+  runs of the arm ($320$ and $272$); the last group is the part of ``beyond'' that is within under rule~A. The $48$
+  crashed runs of the container default have no trajectory, so their CR is not computable.}
   \label{stab:crt}
   \footnotesize
   \begin{tabular}{@{}lllccc@{}}
     \toprule
-    Override & $\varepsilon$ & Rule~D & Runs & CR median & 10th--90th pct. \\
+    Arm & $\varepsilon$ & Rule~D & Runs & CR median & 10th--90th pct. \\
     \midrule
 """ + "\n".join("    " + x for x in lines[:-1]) + r"""
     \bottomrule
