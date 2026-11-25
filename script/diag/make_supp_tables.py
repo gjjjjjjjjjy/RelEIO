@@ -375,3 +375,39 @@ write("supp_bias.tex", r"""\begin{table}[H]
   \end{tabular}
 \end{table}
 """)
+
+# ---- Table: the same bias-experiment runs under a similarity and a rigid alignment (exploratory rescoring) -------
+# Both scores use the same common time window, the same matched poses and the same path length; only the scale of
+# the fit differs (sim3_W: similarity alignment on all matched poses of the window; se3_W: rigid alignment, rule D).
+print("\n== bias experiment rescored: similarity against rigid alignment")
+lines = []
+for sysname in ("DEIO", "SuperEIO"):
+    rs = [r for r in bias if r["system"] == sysname]
+    for i, tol in enumerate((1, 10, 100)):
+        s_ok = sum(float(r["sim3_W"]) <= tol for r in rs)
+        d_ok = sum(float(r["se3_W"]) <= tol for r in rs)
+        only_s = sum(float(r["sim3_W"]) <= tol < float(r["se3_W"]) for r in rs)
+        only_d = sum(float(r["se3_W"]) <= tol < float(r["sim3_W"]) for r in rs)
+        print("%-8s %3d%%: similarity %d, rigid %d of %d; within under similarity only %d, under rigid only %d"
+              % (sysname, tol, s_ok, d_ok, len(rs), only_s, only_d))
+        lines.append("%s & $%d\\%%$ & %d & %d & %d & %d \\\\" % (sysname if i == 0 else "", tol, s_ok, d_ok, only_s, only_d))
+    big = sorted((float(r["se3_W"]), float(r["sim3_W"])) for r in rs if float(r["sim3_W"]) <= 10 < float(r["se3_W"]))
+    print("   largest rigid errors within 10%% under similarity: %s" % ", ".join("%.2f -> %.2f" % x for x in big[-3:]))
+    print("   largest similarity error: %.2f%%" % max(float(r["sim3_W"]) for r in rs))
+    lines.append("\\addlinespace")
+write("supp_bias_rescore.tex", r"""\begin{table}[H]
+  \centering
+  \caption{The $80$ runs of the bias experiment scored with a similarity alignment and with a rigid alignment
+  (rule~D) on the same time window, matched poses, and path length; exploratory. Runs of $40$ per system within
+  each tolerance, and runs within it under only one of the two alignments.}
+  \label{stab:bias-rescore}
+  \footnotesize
+  \begin{tabular}{@{}lccccc@{}}
+    \toprule
+    System & Tolerance & Similarity & Rigid & Similarity only & Rigid only \\
+    \midrule
+""" + "\n".join("    " + x for x in lines[:-1]) + r"""
+    \bottomrule
+  \end{tabular}
+\end{table}
+""")

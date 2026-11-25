@@ -263,6 +263,20 @@ med = lambda system, seq, cond: statistics.median(float(r["se3_W"]) for r in bia
                                                   if (r["system"], r["seq"], r["cond"]) == (system, seq, cond))
 check("SuperEIO boxes_6dof median, biased / clean (%)",
       "%.2f / %.2f" % (med("SuperEIO", "boxes_6dof", "gbias"), med("SuperEIO", "boxes_6dof", "clean")), "5.37 / 4.24")
+sim_only = lambda system, tol: [r for r in bias if r["system"] == system   # noqa: E731
+                                and float(r["sim3_W"]) <= tol < float(r["se3_W"])]
+check("rescored with a similarity alignment: within 10% under it but not under the rigid one, DEIO / SuperEIO",
+      (len(sim_only("DEIO", 10)), len(sim_only("SuperEIO", 10))), (17, 2))
+check("  the reverse (within 10% under the rigid alignment only), both systems",
+      sum(float(r["se3_W"]) <= 10 < float(r["sim3_W"]) for r in bias), 0)
+check("  the two SuperEIO runs: rigid -> similarity error (%)",
+      ", ".join("%.1f -> %.2f" % (float(r["se3_W"]), float(r["sim3_W"]))
+                for r in sorted(sim_only("SuperEIO", 10), key=lambda r: float(r["se3_W"]))), "40.1 -> 0.75, 91.6 -> 0.50")
+check("  largest similarity-alignment error of the 80 runs (%)", "%.2f" % max(float(r["sim3_W"]) for r in bias), "0.75")
+
+print("\nScoring limit (similarity alignment fitted on all scored poses)")
+check("every rule C error of the 592 completed runs at most 50% of the path length",
+      all(float(r["sim3_all"]) <= 50 for r in steps), True)
 
 print("\n%d quantities checked, %d mismatch%s%s" % (rows_checked, len(mismatches), "" if len(mismatches) == 1 else "es",
                                                    (": " + "; ".join(mismatches)) if mismatches else ""))
