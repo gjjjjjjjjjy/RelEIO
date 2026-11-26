@@ -130,6 +130,10 @@ check("default, rule D, within 10%: share of the completed runs / of all 320 run
 off = by_arm["no_tf32_override"]
 check("override removed: pass rule A and fail rule D at 10%", sum(float(r["deio_rule"]) <= 10 < float(r["se3_all"]) for r in off), 86)
 check("override removed: pass rule D and fail rule A at 10%", sum(float(r["se3_all"]) <= 10 < float(r["deio_rule"]) for r in off), 0)
+for label, sub, paper in (("DAVIS240C", [r for r in off if r["scene"].startswith("rpgdavis/")], "67 / 120"),
+                          ("other datasets", [r for r in off if not r["scene"].startswith("rpgdavis/")], "19 / 200")):
+    check("override removed: pass rule A and fail rule D at 10%%, %s (runs / of)" % label,
+          "%d / %d" % (sum(float(r["deio_rule"]) <= 10 < float(r["se3_all"]) for r in sub), len(sub)), paper)
 for rule, paper in zip(RULES, (3, 3, 0, 69)):
     check("override removed: runs above the path length, rule %s" % rule, sum(float(r[RULES[rule]]) > 100 for r in off), paper)
 check("override removed: rule D error below the stationary baseline", sum(float(r["se3_all"]) < float(r["gt_spread"]) for r in off), 173)

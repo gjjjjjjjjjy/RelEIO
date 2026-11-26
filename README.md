@@ -23,7 +23,7 @@ Python 3.9 or later, standard library only:
 python3 script/headline_numbers.py
 ```
 
-The script recomputes 122 quantities from the records and prints each next to the value stated in the paper; it exits
+The script recomputes 124 quantities from the records and prints each next to the value stated in the paper; it exits
 with status 1 if any differs. Among them:
 
 | Result | Value | Records |
