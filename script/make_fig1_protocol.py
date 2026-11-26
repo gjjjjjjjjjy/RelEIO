@@ -248,16 +248,16 @@ for k, row in enumerate(ROWS):
         text(CO, y, outcome, ha="left")
     elif outcome == "?":
         text(CM, y, "?", size=6.6, fontweight="bold")
-        text(CO, y, "undetermined", size=5.4, ha="left")
+        text(CO, y, "undetermined", size=6.0, ha="left")
     else:
         text(CO, y, outcome, ha="left", color=ink)
     if k < len(ROWS) - 1 and ROWS[k + 1] is not None:
         hline(x0 + 0.07, x0 + w - 0.07, y - 0.084, lw=0.35)
 hline(x0 + 0.07, x0 + w - 0.07, 1.40 - 0.168 * 6 - 0.09, color=FRAME, lw=0.5)
 check(x0 + 0.13, 0.155, a=0.024)
-text(x0 + 0.19, 0.155, "as requested", size=5.3, color=GREY, ha="left")
+text(x0 + 0.19, 0.155, "as requested", size=6.0, color=GREY, ha="left")
 text(x0 + 0.76, 0.157, "≠", size=6.4, color=GREY, fontweight="bold")
-text(x0 + 0.82, 0.155, "mismatch", size=5.3, color=GREY, ha="left")
+text(x0 + 0.82, 0.155, "mismatch", size=6.0, color=GREY, ha="left")
 
 # ---- 4. score: a completed run after a rigid alignment; position errors ------------------------------------
 x0, w = X0[3], WIDTHS[3]
@@ -274,7 +274,7 @@ for k, (lab, kw) in enumerate([("ground truth", dict(color=INK, lw=0.9)),
                                ("position error", dict(color=NAT_RED, lw=0.7))]):
     y = 1.585 - 0.105 * k
     ax.plot([x0 + 0.10, x0 + 0.26], [y, y], zorder=5, **kw)
-    text(x0 + 0.31, y, lab, size=5.4, ha="left")
+    text(x0 + 0.31, y, lab, size=6.2, ha="left")
 text(x0 + w / 2, 0.17, "rigid alignment, no scale", color=GREY)
 
 # ---- 5. reliability: share of all K runs that complete within the tolerance --------------------------------
@@ -306,7 +306,7 @@ ax.scatter([sxp(es)], [syp(k_star / K)], s=9, c=INK, lw=0, zorder=7)
 ax.plot([sxp(es)] * 2, [py0 - 0.025, py0], color=INK, lw=0.6, zorder=6)
 text(sxp(es) - 0.008, py0 - 0.078, r"$\varepsilon$", size=6.4)
 text(sxp(es) + 0.034, py0 - 0.058, "*", size=5.6)
-text(px0 + pw - 0.07, syp(0.5 * (1 + done / K)), "crash or undetermined", size=5.2, ha="right")
+text(px0 + pw, syp(1) + 0.075, "crash or undetermined", size=5.8, ha="right")
 text(px0 + pw, 0.17, r"tolerance $\varepsilon$", ha="right", color=GREY)
 text(x0 + 0.09, py0 + ph * 0.5, r"$R_c(\varepsilon)$", size=6.4, rotation=90)
 

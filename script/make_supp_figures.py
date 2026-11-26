@@ -120,7 +120,7 @@ for ax in axes[:, 0]:
     ax.set_ylabel("MPE, rule D (%)")
 fig.legend(handles=[Line2D([], [], color=C_OFF, marker="o", mfc="none", ls="", ms=3.5, label="override removed"),
                     Line2D([], [], color=C_DEF, marker="o", mfc="none", ls="", ms=3.5, label="container default"),
-                    Line2D([], [], color=ns.NAT_RED, marker="x", ls="", ms=3.5, label="numerical failure (above the panel)")],
+                    Line2D([], [], color=ns.NAT_RED, marker="x", ls="", ms=3.5, label="crash (above the panel)")],
            loc="lower center", ncol=3, fontsize=6.5, bbox_to_anchor=(0.5, -0.01))
 fig.subplots_adjust(left=0.08, right=0.99, bottom=0.15, top=0.92, wspace=0.12, hspace=0.45)
 save(fig, "FigS2_runs")

@@ -170,7 +170,7 @@ write("supp_interactions.tex", r"""\begin{table}[H]
   override removed, percentage points, Newcombe's $95\%$ interval for independent proportions) at the stress level
   of the axis ($\rho = 0.1$, $\tau = 10$\,ms, $P = 16$) and on clean input, and the difference of the two with the
   MOVER $95\%$ interval.
-  $^{*}$: interval excludes zero.}
+  $^{*}$: interaction interval excludes zero.}
   \label{stab:interactions}
   \footnotesize
   \begin{tabular}{@{}llccc@{}}
@@ -510,9 +510,9 @@ for fa, name in FAULT_NAMES.items():
 print("readings above 100%% under any rule: %d" % above100)
 write("supp_faults.tex", r"""\begin{table}[H]
   \centering
-  \caption{Known faults injected into the ground truth of the eight sequences (sampled at $20$\,Hz), scored by every
-  rule: median MPE (\%) over the sequences and, in parentheses, the number of sequences (of eight) whose reading exceeds $1\%$
-  and $10\%$ of the path length, respectively; median correct rate (CR) at $\varepsilon = 1\%$ and $10\%$. No reading exceeds
+  \caption{Known faults injected into the ground truth of the eight sequences (sampled at $20$\,Hz), scored by rules A, C, and D and a rigid alignment
+  on the first $5$\,s (rule~B changes only the matching, which is exact for these copies): median MPE (\%) over the sequences and, in parentheses, the number of sequences (of eight) whose reading exceeds $1\%$
+  and $10\%$ of the path length, respectively; median position-only correct rate (CR, Section~\ref{ss:crt}) at $\varepsilon = 1\%$ and $10\%$. No reading exceeds
   the path length. n/c: not computable (no scale can be fitted to a stationary estimate).}
   \label{stab:faults}
   \footnotesize
