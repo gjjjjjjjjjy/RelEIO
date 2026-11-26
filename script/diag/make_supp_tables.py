@@ -219,7 +219,7 @@ for name, rs in hw:
 write("supp_location.tex", r"""\begin{table}[H]
   \centering
   \caption{Where the crashes start (container default arm). BA: first non-finite value detected at the output of
-  the visual bundle adjustment; no IMU: before the visual-inertial alignment had added IMU factors. The next three
+  the visual bundle adjustment; No IMU: before the visual-inertial alignment had added IMU factors. The next three
   columns split the crashes by the Cholesky factorization of the dense Schur complement $\mathbf{S}$: it reported a
   failure while $\mathbf{S}$ was still finite; it reported one on an already non-finite $\mathbf{S}$; it reported
   none. Report first: crashes of the first two groups whose first report preceded the first detection. Last column:
@@ -270,10 +270,10 @@ for a in ARMS:
 write("supp_accuracy.tex", r"""\begin{table}[H]
   \centering
   \caption{Accuracy per test condition and arm, ten runs each. $\le$10\%, $\le$100\%: runs completed with a
-  rule~D error at most $10\%$ or $100\%$ of the path length (crashes count as not within); D, A: median MPE (\%)
+  rule~D error of at most $10\%$ or $100\%$ of the path length (crashes count as not within); D, A: median MPE (\%)
   of completed runs under rules~D and~A;
   $s<0.5$: completed runs with a small scale (below $0.5$) of the similarity alignment fitted on all matched
-  poses (rule~C), which accompanies a collapsed fit but
+  poses (rule~C); a small scale accompanies a collapsed fit but
   does not by itself establish one (Section~\ref{ss:simfit}).}
   \label{stab:accuracy}
   \footnotesize
@@ -292,10 +292,10 @@ write("supp_accuracy.tex", r"""\begin{table}[H]
 
 # ---- Table: scoring rules A-D ------------------------------------------------------------------
 print("\n== scoring rules")
-RULES = [("A", "deio_rule", "Sim(3), first 1000 poses$^{a}$, 1\\,s matching (DEIO's code)"),
-         ("B", "sim3_1000_20ms", "Sim(3), first 1000 poses$^{a}$, 20\\,ms matching"),
-         ("C", "sim3_all", "Sim(3), all poses, 20\\,ms matching"),
-         ("D", "se3_all", "SE(3), all poses, 20\\,ms matching (main)")]
+RULES = [("A", "deio_rule", "Sim(3), first 1000 poses$^{a}$, 1-s matching (DEIO's code)"),
+         ("B", "sim3_1000_20ms", "Sim(3), first 1000 poses$^{a}$, 20-ms matching"),
+         ("C", "sim3_all", "Sim(3), all poses, 20-ms matching"),
+         ("D", "se3_all", "SE(3), all poses, 20-ms matching (main)")]
 assert len(steps) == 592 and all(r["score"] == "ok" for r in steps), "all 592 completed runs must be scored"
 lines = []
 for key, col, desc in RULES:
@@ -404,7 +404,7 @@ for sysname in ("DEIO", "SuperEIO"):
 write("supp_bias_rescore.tex", r"""\begin{table}[H]
   \centering
   \caption{The $80$ runs of the bias experiment scored with a similarity alignment and with a rigid alignment
-  (rule~D) on the same time window, matched poses, and path length; exploratory. Runs of $40$ per system within
+  (rule~D) on the same time window, matched poses, and path length; exploratory. Number of runs (of $40$ per system) within
   each tolerance, and runs within it under only one of the two alignments.}
   \label{stab:bias-rescore}
   \footnotesize
@@ -511,8 +511,8 @@ print("readings above 100%% under any rule: %d" % above100)
 write("supp_faults.tex", r"""\begin{table}[H]
   \centering
   \caption{Known faults injected into the ground truth of the eight sequences (sampled at $20$\,Hz), scored by every
-  rule: median MPE (\%) over the sequences and, in parentheses, the sequences of eight whose reading exceeds $1\%$
-  and $10\%$ of the path length; median correct rate (CR) at $\varepsilon = 1\%$ and $10\%$. No reading exceeds
+  rule: median MPE (\%) over the sequences and, in parentheses, the number of sequences (of eight) whose reading exceeds $1\%$
+  and $10\%$ of the path length, respectively; median correct rate (CR) at $\varepsilon = 1\%$ and $10\%$. No reading exceeds
   the path length. n/c: not computable (no scale can be fitted to a stationary estimate).}
   \label{stab:faults}
   \footnotesize
@@ -551,7 +551,7 @@ for arm, aname in (("no_tf32_override", "override removed"), ("default", "contai
 write("supp_crt.tex", r"""\begin{table}[H]
   \centering
   \caption{Position-only correct rate (CR) of the completed runs of the main matrix, grouped by whether the rule~D error is within
-  the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D). Within and beyond together are the completed
+  the same tolerance $\varepsilon$ (per pose for CR, mean for rule~D). ``Within'' and ``beyond'' together are the completed
   runs of the arm ($320$ and $272$); the last group is the part of ``beyond'' that is within under rule~A. The $48$
   crashed runs of the container default have no trajectory, so their CR is not computable.}
   \label{stab:crt}
