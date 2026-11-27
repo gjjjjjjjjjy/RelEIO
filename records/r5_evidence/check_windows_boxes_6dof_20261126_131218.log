@@ -1,0 +1,3 @@
+[boxes_6dof] 133085511 events, 1295 windows of 46066 us
+  tq 10000 us: of 133029526 events in a window before or after, 7239189 crossed to another window, 0 left all windows, 6036 entered one (5.45% changed); 9856 events quantized differently from event_stress (half-grid ties)
+  keep 0.1: kept 13303741 (old per-window draw) vs 13308612 (order-free draw); median per-window difference 1.0%, correlation 1.000; 10.0% of old-kept events also kept (about 10% expected)

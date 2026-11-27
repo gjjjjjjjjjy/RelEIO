@@ -17,7 +17,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from script.run_degradation_sweep import DATASETS, parse_mpe, preflight_torch
+from script.run_degradation_sweep import DATASETS, MAIN_DATASETS, parse_mpe, preflight_torch
 from script import stress_evidence as _ev
 
 PATCHES = ["96", "64", "32", "16"]   # 96=default(clean), 逐步减视觉预算
@@ -119,7 +119,7 @@ def summarize(datasets, patches, seeds):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--datasets", nargs="+", default=list(DATASETS.keys()))
+    ap.add_argument("--datasets", nargs="+", default=list(MAIN_DATASETS))
     ap.add_argument("--patches", nargs="+", default=PATCHES)
     ap.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     ap.add_argument("--scenes", nargs="+", default=None)

@@ -1,0 +1,85 @@
+{
+ "seq": "boxes_6dof",
+ "cond": "noise:5",
+ "ops_version": "r5-ops-2",
+ "bag": "data/rosbags/rpgdavis/boxes_6dof.bag",
+ "h5_files": {
+  "data/R5_ours/boxes_6dof__clean/events_left.h5": {
+   "sha256": "ba06473047812bb90224fc69619adc8e0142ef91e4d818a3777c927d864909fa",
+   "manifest": "ba06473047812bb90224fc69619adc8e0142ef91e4d818a3777c927d864909fa"
+  },
+  "data/R5_ours/boxes_6dof__noise5hz/events_left.h5": {
+   "sha256": "6cd1d6aed37c104a2d6613b7b5b4f0a86e8d86242017b66ddbcb87084c404459",
+   "manifest": "6cd1d6aed37c104a2d6613b7b5b4f0a86e8d86242017b66ddbcb87084c404459"
+  }
+ },
+ "time_mapping": "text_seconds",
+ "time_offset": {
+  "offset_us": 0,
+  "prefix_equal": true,
+  "events_ref": 2000,
+  "events_bag": 2000
+ },
+ "imu": {
+  "messages": 59685,
+  "rows_txt": 59685,
+  "max_time_diff_us": 0.25,
+  "max_gyro_diff": 4.999556324492005e-12,
+  "max_acc_diff": 5.000089231543825e-11
+ },
+ "noise_events": 12918665,
+ "messages": {
+  "/dvs/camera_info": 32518,
+  "/dvs/events": 1794,
+  "/optitrack/davis": 11954,
+  "/dvs/imu": 59685,
+  "/dvs/image_raw": 1298
+ },
+ "sub_microsecond_remainder_ns": {
+  "distinct": 2,
+  "most_common": [
+   [
+    -365,
+    67568243
+   ],
+   [
+    -366,
+    65517268
+   ]
+  ]
+ },
+ "identity_clean": {
+  "seconds": 61,
+  "n_mismatched": 0,
+  "first_mismatched": [],
+  "events_bag": 133085511,
+  "events_h5": 133085511
+ },
+ "identity_output": {
+  "seconds": 61,
+  "n_mismatched": 0,
+  "first_mismatched": [],
+  "events_bag": 146004176,
+  "events_h5": 146004176
+ },
+ "rewrite": {
+  "messages": 107249,
+  "missing_or_extra": 0,
+  "topic_or_time": 0,
+  "type": 0,
+  "other_bytes": 0,
+  "event_header": 0,
+  "event_payload": 0
+ },
+ "imu_output": {
+  "messages": 59685,
+  "rows_txt": 59685,
+  "max_time_diff_us": 0.25,
+  "max_gyro_diff": 4.999556324492005e-12,
+  "max_acc_diff": 5.000089231543825e-11
+ },
+ "output_bag": "data/rosbags/rpgdavis/boxes_6dof__r5_noise5hz.bag",
+ "output_sha256": "7e4ac1b343a5bb4d929df2babc43ce5644ba90731c79c0c7a15274364b8c6e25",
+ "source_sha256": "5f6910406d1fac5fbd4c1b0cb78b7ba84dfafddc8abcbfe42a6d8e43810dbdf8",
+ "passed": true
+}

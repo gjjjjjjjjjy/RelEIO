@@ -36,6 +36,8 @@ def preflight_torch():
     print(f"[preflight] torch OK, {r.stdout.strip()} GPUs")
 
 # 数据集: (eval脚本, config, inputdir, [序列], 额外参数)
+R5_SCENES = ["%s__%s" % (s, t) for s in ("boxes_6dof", "poster_6dof")
+             for t in ("clean", "keep0.1", "tq10000us", "noise5hz", "imu15000us")]
 DATASETS = {
     "vector":  ("script/eval_deio/vector.py",   "config/vector.yaml",  "data/VECtor",  ["desk_normal1", "corner_slow1"], []),
     "hku":     ("script/eval_deio/hku.py",      "config/hku.yaml",     "data/HKU",     ["vicon_dark1"], []),
@@ -47,7 +49,15 @@ DATASETS = {
     # comparison of data pipelines (script/diag/run_davis_pipelines.sh), not in the sweeps
     "rpgdavis_up": ("script/eval_deio/davis240c.py", "config/davis240c.yaml", "data/DAVIS240C_upstream",
                     ["boxes_6dof", "poster_6dof"], []),
+    # pipeline comparison (round 5): perturbed copies written once by script/diag/r5_make_inputs.py, read by our layer
+    # (r5ours, internal perturbation off) and by DEIO's own pipeline rebuilt from them (r5up); scene = <seq>__<tag>
+    "r5ours": ("script/eval_deio/mvsec.py", "config/mvsec.yaml", "data/R5_ours", R5_SCENES,
+               ['--scene_suffix', '', '--t_imu_cam_identity', '--H', '180', '--W', '240']),
+    "r5up": ("script/eval_deio/davis240c.py", "config/davis240c.yaml", "data/R5_up", R5_SCENES, []),
 }
+# datasets that are run only with explicit units (comparisons of data pipelines), never as part of a matrix or sweep
+EXPLICIT_ONLY = ("rpgdavis_up", "r5ours", "r5up")
+MAIN_DATASETS = [d for d in DATASETS if d not in EXPLICIT_ONLY]      # the 8 sequences of the main matrix
 KEEPS = ["1.0", "0.5", "0.3", "0.1"]
 SEEDS = [1000, 1001, 1002, 1003, 1004]
 LOGDIR = "logs/sweep_v2"  # stress v2: 新目录, 旧 logs/sweep 归档为 logs/sweep_legacy_v1
@@ -189,7 +199,7 @@ def summarize(datasets, keeps, seeds):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--datasets", nargs="+", default=list(DATASETS.keys()))
+    ap.add_argument("--datasets", nargs="+", default=list(MAIN_DATASETS))
     ap.add_argument("--keeps", nargs="+", default=KEEPS)
     ap.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     ap.add_argument("--scenes", nargs="+", default=None, help="只跑指定序列")

@@ -24,6 +24,8 @@ Only the visualizations of pp_davis240c.py (undistorted images, time surfaces) a
 pipeline does not read them.
 
   python3 script/pp_data/pp_davis240c_from_converted.py --seq boxes_6dof --outdir <scratch>/boxes_6dof
+  python3 script/pp_data/pp_davis240c_from_converted.py --seq boxes_6dof --src data/R5_ours/boxes_6dof__keep0.1 \
+      --outdir <scratch>/boxes_6dof__keep0.1      (a perturbed copy; raw image times still from the sequence)
 """
 import argparse
 import os
@@ -50,8 +52,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seq", required=True)
     ap.add_argument("--outdir", required=True)
+    ap.add_argument("--src", default=None, help="input folder in the data/RPGDAVIS_pp format (default data/RPGDAVIS_pp/<seq>); the pipeline comparison passes a perturbed copy, data/R5_ours/<seq>__<tag>")
     a = ap.parse_args()
-    src = os.path.join(ROOT, "data", "RPGDAVIS_pp", a.seq)
+    src = a.src or os.path.join(ROOT, "data", "RPGDAVIS_pp", a.seq)
     raw_images = os.path.join(ROOT, "data", "RPGDAVIS_unzip", a.seq, "images.txt")
     os.makedirs(a.outdir, exist_ok=True)
 

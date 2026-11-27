@@ -23,7 +23,7 @@ Python 3.9 or later, standard library only:
 python3 script/headline_numbers.py
 ```
 
-The script recomputes 124 quantities from the records and prints each next to the value stated in the paper; it exits
+The script recomputes 147 quantities from the records and prints each next to the value stated in the paper; it exits
 with status 1 if any differs. Among them:
 
 | Result | Value | Records |
@@ -36,6 +36,8 @@ with status 1 if any differs. Among them:
 | Four GPU models under reduced event density / clean input, with the override (Table S4) | 33/40 / 7/40; 0/40 without it | same |
 | DAVIS240C `boxes_6dof`, clean, override removed: runs above the path length under rule D with DEIO's own pipeline / our data-loading layer (Table S1) | 0/10 / 10/10 | `davis_pipelines_scores_*.csv` |
 | Correct rate of OpenLORIS (10% of the path length) of the 86 runs that pass rule A and fail rule D (Table S10) | median 0.00 | `crt_round4_*.csv` |
+| DAVIS240C, DEIO's own pipeline on the same perturbed recordings: clean runs within 10% under rule D; runs under stress within 10% only under rules A and C, of them above the path length (Table S15) | 20/20; 27/80, 14 | `r5_eval_*.csv` |
+| SuperEIO on the same perturbed recordings: completed / failed / undetermined; completed runs within 10% under rule C but not rule D (Table S15) | 76/19/5; 15/76 | same |
 
 ## Regenerate the figures and tables
 
@@ -75,7 +77,8 @@ File names do not follow the figure numbers of the paper; this table gives the c
 | `utils/sensor_stress.py`, [`docs/SENSOR_STRESS_OPERATORS.md`](docs/SENSOR_STRESS_OPERATORS.md) | degradation operators and their definition |
 | `utils/numtrace.py` | numerical tracer: first non-finite tensor, status of each Cholesky factorization |
 | `script/supereio/` | build, launch, and evaluation scripts for the SuperEIO port, and the bias-bag generator |
-| `tests/` | unit tests of the operators, the ledger, the launch plans, and the tracer |
+| `utils/r5_ops.py`, `script/diag/r5_*`, `script/diag/run_r5_deio.sh`, `script/supereio/make_r5_bag.py`, `script/supereio/r5_*`, `script/supereio/run_r5_supereio.sh` | the comparison of three readers of the same perturbed recordings: perturbations applied once to the whole event stream, the copies and DEIO's own input files, the rewritten rosbags and their checks, the launchers with their acceptance, and the readouts |
+| `tests/` | unit tests of the operators, the ledger, the launch plans, the tracer, and the checks of the comparison of three readers |
 
 ## Coverage
 
@@ -83,16 +86,19 @@ What can be recomputed from this repository alone, and what cannot:
 
 - **From the records here:** 1412 DEIO runs in ten ledgers (the diagnostic rounds, the
   precision-switch matrix, round 3A, the main matrix, the replication on three further GPU models, and DEIO's
-  side of the bias experiment), the SuperEIO runs of the bias experiment, and the 40 runs that compare DEIO's own
-  DAVIS240C pipeline with ours. This covers the crash counts of
+  side of the bias experiment), the SuperEIO runs of the bias experiment, the 40 runs that compare DEIO's own
+  DAVIS240C pipeline with ours, and the 260 runs and attempts of the comparison of three readers of the same
+  perturbed recordings (with the 160 runs of an L40S batch kept as a record, and the evidence that the three readers
+  received the same input). This covers the crash counts of
   every round and arm (Tables III and S1-S3, apart from the two checks named below), every number of the main matrix (reliability under rules A-D,
-  Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S1 and S5-S14
+  Table IV, the paired comparison of the arms, where the crashes start), the supplementary tables S1 and S5-S15
   except S12, and all figures.
 - **Not included:** the raw run ledgers (one directory per run with the request, the recorded environment, the
   input fingerprints, the tracer output, the log, and the trajectory), from which the records were extracted with
   the scripts above; two small checks of Table S2 that are outside the extracted records (the eight untraced runs
   of round 1 and the voxel-cache check); and the logs of the single SuperEIO runs on clean input, which Table S12
-  summarizes.
+  summarizes; and, for the comparison of three readers, the perturbed copies, DEIO's rebuilt input files, the
+  rewritten rosbags, and the SuperEIO run folders, whose checks are in `records/r5_evidence/`.
 - **The estimator is not included.** The launchers run inside a checkout of DEIO with our data-loading layer and
   with the probe hooks that call `utils/numtrace.py`; the supplementary material of the paper describes its
   differences from the upstream code. In the scripts, `FreqVIO` is the name of that checkout and `FREQVIO_*` the
@@ -102,6 +108,7 @@ What can be recomputed from this repository alone, and what cannot:
 
 ```bash
 python3 -m unittest discover -s tests
+python3 tests/test_r5_checks.py && python3 tests/test_r5_eval.py
 ```
 
 The tests of the operators, the ledger, and the launch plans need NumPy. `tests/test_numtrace.py` needs PyTorch,
@@ -109,4 +116,6 @@ and one test of the voxel-cache namespace is skipped outside an estimator checko
 
 ## License
 
-MIT; see [`LICENSE`](LICENSE).
+MIT; see [`LICENSE`](LICENSE). The license covers the code and the records in this repository. The records hold
+results, counts, and hashes, not sensor data: the datasets keep their own licenses and are not redistributed (the
+DAVIS240C recordings of the Event Camera Dataset are under CC BY-NC-SA 3.0).

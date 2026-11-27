@@ -55,7 +55,8 @@ _spec.loader.exec_module(ET)
 GT_FILES = {"rpgdavis": ("data/RPGDAVIS_pp", "mocap_data.txt"), "vector": ("data/VECtor", "poses_evs_left.txt"),
             "hku": ("data/HKU", "gt_stamped_davis346.txt"), "tumvie": ("data/TUM-VIE", "mocap_data.txt"),
             "fpv": ("data/UZHFPV", "stamped_groundtruth_us.txt"),
-            "rpgdavis_up": ("data/DAVIS240C_upstream", "gt_stamped_left.txt")}
+            "rpgdavis_up": ("data/DAVIS240C_upstream", "gt_stamped_left.txt"),
+            "r5ours": ("data/R5_ours", "mocap_data.txt"), "r5up": ("data/R5_up", "gt_stamped_left.txt")}
 N_ALIGN = {"fpv": None}   # None = all poses
 
 
@@ -84,7 +85,7 @@ def load_gt(dataset, scene):
         t = g[:, 0]
         mx, span = np.abs(t).max(), t.max() - t.min()
         g[:, 0] = t / 1e3 if mx > 1e12 else (t if (mx > 1e5 or span > 1e5) else t * 1e6)
-    if dataset in ("rpgdavis", "tumvie"):
+    if dataset in ("rpgdavis", "tumvie", "r5ours"):
         g = g[g[:, 0] > 0]
     return g
 

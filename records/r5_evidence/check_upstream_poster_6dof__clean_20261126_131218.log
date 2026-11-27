@@ -1,0 +1,58 @@
+{
+ "ours": "data/R5_ours/poster_6dof__clean",
+ "up": "data/R5_up/_tmp_poster_6dof__clean_20261126_131218",
+ "src": "data/RPGDAVIS_pp/poster_6dof",
+ "missing_files": [],
+ "calib": {
+  "reference": "data/DAVIS240C_upstream/poster_6dof",
+  "intrinsics": [
+   169.50404059859204,
+   179.58096603591352,
+   136.0468660434908,
+   114.28206073946285
+  ],
+  "intrinsics_equal": true,
+  "rectify_map_shape": [
+   180,
+   240,
+   2
+  ],
+  "rectify_map_equal": true
+ },
+ "t0_us": 0.0,
+ "frames": {
+  "source": "data/R5_ours/poster_6dof__clean/image_timestamps.txt",
+  "frames_source": 1355,
+  "frames_raw": 1355,
+  "frames_rel": 1355,
+  "raw_ns_exact": true,
+  "rel_max_err_us": 0.0
+ },
+ "events": {
+  "up": 133464530,
+  "ours": 133464530,
+  "mismatched_seconds": 0,
+  "first": [],
+  "time_ordered": true,
+  "ms_to_idx": "equal"
+ },
+ "imu": {
+  "cond": "clean",
+  "offset_us": 0,
+  "rows_src": 59746,
+  "rows_up": 59746,
+  "copy_equals_expected": true,
+  "t_ns_exact": true,
+  "max_abs_value_diff": 0.0
+ },
+ "gt": {
+  "copy_equals_source": true,
+  "rows_src": 11610,
+  "rows_up": 11610,
+  "raw_equal": true,
+  "rel_max_time_err_us": 0.0,
+  "rel_poses_equal": true
+ },
+ "failed": []
+}
+[r5-upstream] PASSED 

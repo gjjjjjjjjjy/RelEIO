@@ -1,0 +1,83 @@
+{
+ "seq": "poster_6dof",
+ "cond": "keep:0.1",
+ "ops_version": "r5-ops-2",
+ "bag": "data/rosbags/rpgdavis/poster_6dof.bag",
+ "h5_files": {
+  "data/R5_ours/poster_6dof__clean/events_left.h5": {
+   "sha256": "18c8ec9d02e7695a96dca683ddb80dbfd7879b13c6047e5b4195d4f8f143db8c",
+   "manifest": "18c8ec9d02e7695a96dca683ddb80dbfd7879b13c6047e5b4195d4f8f143db8c"
+  },
+  "data/R5_ours/poster_6dof__keep0.1/events_left.h5": {
+   "sha256": "43f33025e9a82d29a0b24608bc159790a928cdcb6b09941f05223adeee4cbb18",
+   "manifest": "43f33025e9a82d29a0b24608bc159790a928cdcb6b09941f05223adeee4cbb18"
+  }
+ },
+ "time_offset": {
+  "offset_us": 1468940293840967,
+  "prefix_equal": true,
+  "events_ref": 2000,
+  "events_bag": 2000
+ },
+ "imu": {
+  "messages": 59746,
+  "rows_txt": 59746,
+  "max_time_diff_us": 0.5000000037252903,
+  "max_gyro_diff": 4.998845781756245e-11,
+  "max_acc_diff": 5.000089231543825e-11
+ },
+ "messages": {
+  "/dvs/camera_info": 32417,
+  "/dvs/imu": 59746,
+  "/dvs/events": 1795,
+  "/optitrack/davis": 11610,
+  "/dvs/image_raw": 1358
+ },
+ "sub_microsecond_remainder_ns": {
+  "distinct": 2,
+  "most_common": [
+   [
+    274,
+    67875519
+   ],
+   [
+    273,
+    65589011
+   ]
+  ]
+ },
+ "identity_clean": {
+  "seconds": 60,
+  "n_mismatched": 0,
+  "first_mismatched": [],
+  "events_bag": 133464530,
+  "events_h5": 133464530
+ },
+ "identity_output": {
+  "seconds": 60,
+  "n_mismatched": 0,
+  "first_mismatched": [],
+  "events_bag": 13344201,
+  "events_h5": 13344201
+ },
+ "rewrite": {
+  "messages": 106926,
+  "missing_or_extra": 0,
+  "topic_or_time": 0,
+  "type": 0,
+  "other_bytes": 0,
+  "event_header": 0,
+  "event_payload": 0
+ },
+ "imu_output": {
+  "messages": 59746,
+  "rows_txt": 59746,
+  "max_time_diff_us": 0.5000000037252903,
+  "max_gyro_diff": 4.998845781756245e-11,
+  "max_acc_diff": 5.000089231543825e-11
+ },
+ "output_bag": "data/rosbags/rpgdavis/poster_6dof__r5_keep0.1.bag",
+ "output_sha256": "9751efc27ab34db6afff2e9253ef0815581a0b2d6b144fe803acd3bbb7e31d70",
+ "source_sha256": "496c10915e3943cad2b26b8f842392985816964481f17ae2acb8129c967d03c7",
+ "passed": true
+}

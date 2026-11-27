@@ -20,6 +20,7 @@ differences, as in script/diag/round4_analysis.py, whose functions are reused he
 import collections
 import csv
 import glob
+import json
 import math
 import os
 import sys
@@ -559,6 +560,95 @@ write("supp_crt.tex", r"""\begin{table}[H]
   \begin{tabular}{@{}lllccc@{}}
     \toprule
     Arm & $\varepsilon$ & Rule~D & Runs & CR median & 10th--90th pct. \\
+    \midrule
+""" + "\n".join("    " + x for x in lines[:-1]) + r"""
+    \bottomrule
+  \end{tabular}
+\end{table}
+""")
+
+# ---- Table: round 5, three readers on the same perturbed recordings (script/diag/r5_eval.py) ----------------------
+print("\n== round 5: DEIO's own DAVIS240C pipeline, our layer, and SuperEIO on the same perturbed recordings")
+r5 = rows(one("r5_eval_*.csv"))
+assert len(r5) == 260 and len({r["run"] for r in r5}) == 260, "260 distinct runs expected"
+assert not any(r["status"].startswith("excluded") for r in r5), "no excluded run expected"
+R5_READERS = collections.OrderedDict([("deio_own", "DEIO, own pipeline"), ("deio_ours", "DEIO, our layer"),
+                                      ("supereio", "SuperEIO")])
+R5_CONDS = collections.OrderedDict([("clean", "clean"), ("keep0.1", "$\\rho=0.1$"), ("tq10000us", "$\\tau=10$\\,ms"),
+                                    ("noise5hz", "noise $5$\\,Hz"), ("imu15000us", "IMU $+15$\\,ms")])
+lines, tot = [], collections.defaultdict(collections.Counter)
+for rd, rname in R5_READERS.items():
+    for seq in ("boxes_6dof", "poster_6dof"):
+        first = True
+        for cond, cname in R5_CONDS.items():
+            g = [r for r in r5 if r["reader"] == rd and r["seq"] == seq and r["cond"] == cond]
+            if not g:
+                continue
+            assert len(g) == 10
+            done = [r for r in g if r["status"] == "completed"]
+            fail = sum(r["status"].startswith("failed") for r in g)
+            und = sum(r["status"].startswith("undetermined") for r in g)
+            assert len(done) + fail + und == 10
+            D = [num(r["D"]) for r in done]
+            assert all(d == d for d in D), "every completed run scored under D"
+            C, A = [num(r["C"]) for r in done], [num(r["A"]) for r in done]
+            within, above = sum(d <= 10 for d in D), sum(d > 100 for d in D)
+            c_only = sum(c <= 10 < d for c, d in zip(C, D))
+            rev = sum(d <= 10 < c for c, d in zip(C, D)) + (sum(d <= 10 < a for a, d in zip(A, D)) if rd != "supereio" else 0)
+            a_only = sum(a <= 10 < d for a, d in zip(A, D)) if rd != "supereio" else None
+            t = tot[rd]
+            t.update(runs=10, completed=len(done), failed=fail, undetermined=und, within=within, above=above,
+                     c_only=c_only, reverse=rev, a_only=a_only or 0)
+            if cond == "clean":
+                t.update(clean_runs=10, clean_within=within)
+            else:
+                t.update(stress_runs=10, stress_c_only=c_only, stress_above=above,
+                         stress_above_c_within=sum(d > 100 and c <= 10 for c, d in zip(C, D)))
+            rng = ("%s [%s, %s]" % (pct(med(D)), pct(min(D)), pct(max(D)))) if D else "--"
+            print("%-19s %-11s %-10s c/f/u %d/%d/%d | D<=10 %2d | >L %2d | C only %2d | A only %s | reverse %d | D %s"
+                  % (rname, seq, cond, len(done), fail, und, within, above, c_only,
+                     "-" if a_only is None else a_only, rev, rng))
+            lines.append("%s & %s & %s & %d/%d/%d & %d & %d & %s & %s & %s \\\\" % (
+                rname if (seq == "boxes_6dof" and first) else "", seq.replace("_", "\\_") if first else "", cname,
+                len(done), fail, und, within, above, ("%d" % c_only) if done else "--",
+                "--" if a_only is None else "%d" % a_only, rng.replace("[", "(").replace("]", ")")))
+            first = False
+        lines.append("\\addlinespace")
+for rd, rname in R5_READERS.items():
+    t = tot[rd]
+    print("%-19s runs %d completed %d failed %d undetermined %d | within D %d | >L %d | C only %d (of %d completed) | "
+          "A only %s | reverse %d" % (rname, t["runs"], t["completed"], t["failed"], t["undetermined"], t["within"],
+                                      t["above"], t["c_only"], t["completed"],
+                                      "-" if rd == "supereio" else t["a_only"], t["reverse"]))
+own = tot["deio_own"]
+print("DEIO own pipeline: clean within 10%% under D %d/%d; stress: C only %d/%d, of which above the path length %d "
+      "(all within 10%% under C: %d)" % (own["clean_within"], own["clean_runs"], own["stress_c_only"],
+                                         own["stress_runs"], own["stress_above"], own["stress_above_c_within"]))
+print("all readers: C within but D beyond 10%%: %d of %d completed trajectories; the reverse: %d"
+      % (sum(t["c_only"] for t in tot.values()), sum(t["completed"] for t in tot.values()),
+         sum(t["reverse"] for t in tot.values())))
+for r in r5:
+    if r["status"].startswith("undetermined") and num(r["D"]) == num(r["D"]):
+        print("sensitivity only (undetermined, not counted): %s %s %s %s: D %s, C %s"
+              % (r["reader"], r["seq"], r["cond"], r["rep"], pct(num(r["D"])), pct(num(r["C"]))))
+side = json.load(open(one("r5_eval_*_readouts.json")))
+for s, w in side["window"].items():
+    print("common window %s: %.2f s (readers %s)" % (s, (w["w1_us"] - w["w0_us"]) / 1e6, ", ".join(w["readers"])))
+write("supp_r5.tex", r"""\begin{table}[H]
+  \centering
+  \caption{Three readers of the same perturbed DAVIS240C recordings (Section~\ref{s:r5}): DEIO through its own
+  pipeline and through our data-loading layer (override removed, seeds $4000$--$4009$) and SuperEIO (its authors'
+  configuration), ten runs per row on RTX 4090 GPUs. Completed/failed/undetermined runs; runs within $10\%$ under
+  rule~D on the common time window (all runs in the denominator); runs whose rule~D error exceeds the path length
+  ($>L$); completed runs within $10\%$ under rule~C (C only) or rule~A (A only, DEIO) but not under rule~D; median
+  rule~D MPE (\%) of the completed runs, with its range. No completed run was within $10\%$ under rule~D but not under
+  rule~C or~A.}
+  \label{stab:r5}
+  \footnotesize
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{@{}lllcccccl@{}}
+    \toprule
+    Reader & Sequence & Condition & C/F/U & D $\le 10\%$ & $>L$ & C only & A only & D median (range) \\
     \midrule
 """ + "\n".join("    " + x for x in lines[:-1]) + r"""
     \bottomrule

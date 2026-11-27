@@ -159,3 +159,52 @@ these files carry no `cell` column. The same runs with their input condition are
 | `sim3_W`, `sim3_W_scale` | error and scale of a Sim(3) fit on the window |
 | `dist_ratio_1s` | distance ratio over 1 s, as above |
 | `matched` | number of matched poses |
+
+## Three readers of the same perturbed recordings (round 5; 260 runs and attempts)
+
+DAVIS240C `boxes_6dof` and `poster_6dof`. Each perturbation was applied once to the whole event stream of the text
+release (`utils/r5_ops.py`), and the same events were given to three readers: DEIO's own DAVIS240C pipeline (input
+files rebuilt from each perturbed copy), DEIO through our data-loading layer, and SuperEIO (rewritten rosbags).
+DEIO: override removed, seeds 4000-4009, eight RTX 4090 GPUs. SuperEIO: its authors' configuration, eight parallel
+instances with 16 logical CPUs each, eight RTX 4090 GPUs.
+
+`r5_eval_20261126.csv`, written by `script/diag/r5_eval.py`: one row per DEIO run or SuperEIO attempt.
+
+| Column | Meaning |
+|---|---|
+| `reader` | `deio_own` (DEIO's own pipeline), `deio_ours` (our data-loading layer), `supereio` |
+| `seq` | `boxes_6dof` or `poster_6dof` |
+| `cond` | `clean`; `keep0.1` event density 0.1; `tq10000us` timestamp quantization 10 ms; `noise5hz` background noise of 5 Hz per pixel; `imu15000us` IMU timestamps shifted by +15 ms (the last two for `deio_own` and `supereio` only) |
+| `rep` | run seed (DEIO) or attempt index 1-10 (SuperEIO) |
+| `run` | run identifier (DEIO) or run folder (SuperEIO) |
+| `status` | `completed`; `failed` (DEIO: numerical failure; SuperEIO: fewer than 10 poses, a restart, or a "system reboot"); `undetermined` (SuperEIO: `run_seq.sh` or `rosbag play` exit code not 0, or a ROS process that died) |
+| `D`, `C` | error on the time window common to the three readers, rigid (SE(3)) and similarity (Sim(3)) alignment fitted on the same matched poses (20 ms matching) |
+| `A` | DEIO only: DEIO's evaluation code on the whole trajectory |
+| `scale` | scale of the similarity fit |
+| `matched_W`, `path_W_m` | matched poses in the window, ground-truth path length in the window (m) |
+| `D_full` | rigid alignment on the whole trajectory |
+
+`D` and `C` of an undetermined SuperEIO attempt that left a trajectory are given for information; such attempts are
+not counted as completed. `r5_eval_20261126_readouts.json`: the common window of each sequence (bag time in
+microseconds, and the runs that set its two ends), the offset that moves each DEIO reader's ground-truth time to the
+bag's, and the readouts per reader, sequence, and condition.
+
+`r5_supereio_main_20261126_152538.json`, written by `script/supereio/r5_accept.py`: the acceptance record of the
+SuperEIO batch. Per attempt: outcome, the identity read from its summary (sequence, tag, run folder, variant, rosbag;
+paths relative to the repository), CPU set and its check, hash of the TensorRT engines and its check, solves stopped
+by the time limit at the 700th solve, and the rule D error of the whole run. For the batch: validity, the scheduling
+check, and whether the engines are those of the bias experiment.
+
+`r5_deio_scores_20261126_152156.csv` and `r5_deio_details_20261126_152156.csv`: the 160 DEIO runs of the RTX 4090
+batch, with the columns of `davis_pipelines_scores_*` and `davis_pipelines_details_*`; `scene` is
+`r5up/<seq>__<cond>` (DEIO's own pipeline) or `r5ours/<seq>__<cond>` (our layer). `..._20261126_132849.csv`: the same
+plan run on eight L40S GPUs (160 runs), kept as a record and not used in the paper's numbers.
+
+`r5_evidence/`: identity of the input across the three readers.
+
+| File | Content |
+|---|---|
+| `copy_<seq>__<cond>.json` (10) | the perturbed copy (`script/diag/r5_make_inputs.py`): hash of the source, per-second digest (number of events and SHA-256 of the sorted events) of the source and of the output. The first events of the recording, raw data of the dataset, are omitted here (`first_events_omitted`) |
+| `<seq>__r5_<cond>.json` (10) | the rosbag check (`script/supereio/make_r5_bag.py`): time offset and time mapping, IMU check, per-second identity with the copy, message-by-message comparison of the rewritten rosbag with the original |
+| `check_upstream_<seq>__<cond>_*.log` (10) | DEIO's own input files read back and compared with the copy (`script/diag/r5_check_upstream.py`) |
+| `check_windows_<seq>_*.log` (2) | the per-window perturbation of the main matrix and the whole-stream perturbation compared over the windows of our layer (`script/diag/r5_check_windows.py`): events whose window membership changes, as a share of the events that lie in a window before or after quantization |

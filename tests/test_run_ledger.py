@@ -477,10 +477,12 @@ class StressCells(unittest.TestCase):
         self.assertEqual(M.front_load_inputs(jobs, lambda ds: False), jobs)
 
     def test_select_part(self):
-        from script.run_degradation_sweep import DATASETS
-        # the 8 sequences of the main matrix; rpgdavis_up is DEIO's own DAVIS240C pipeline, run only in the
-        # comparison of data pipelines (script/diag/run_davis_pipelines.sh) with explicit units
-        scenes = [(d, sc) for d in DATASETS if d != "rpgdavis_up" for sc in DATASETS[d][3]]
+        from script.run_degradation_sweep import DATASETS, EXPLICIT_ONLY, MAIN_DATASETS
+        # the 8 sequences of the main matrix; rpgdavis_up (DEIO's own DAVIS240C pipeline) and r5ours / r5up (the
+        # round-5 pipeline comparison) are run only with explicit units, never as part of a matrix
+        self.assertEqual(set(EXPLICIT_ONLY), {"rpgdavis_up", "r5ours", "r5up"})
+        self.assertEqual(MAIN_DATASETS, ["vector", "hku", "tumvie", "rpgdavis", "fpv"])
+        scenes = [(d, sc) for d in MAIN_DATASETS for sc in DATASETS[d][3]]
         self.assertEqual(len(scenes), 8)
         self.assertEqual(DATASETS["rpgdavis_up"][3], ["boxes_6dof", "poster_6dof"])
         jobs = M.build_jobs(scenes, ["default", "no_tf32_override"], 5, [1000, 1001, 1002, 1003, 1004],

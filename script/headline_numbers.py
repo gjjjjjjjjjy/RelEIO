@@ -11,6 +11,10 @@ Standard library only. Reads the records directory (see script/_layout.py):
   deio_round4_scores_paper_rule_*.csv  the completed runs (592) with the rigid first-5-s alignment added
   scoring_faults_*.csv                 known faults injected into the ground truth of the eight sequences
   crt_round4_*.csv                     the correct rate (OpenLORIS) of every run of the main matrix (640)
+  r5_eval_*.csv, r5_eval_*_readouts.json  round 5: three readers of the same perturbed recordings (260), readouts
+  r5_supereio_main_*.json              round 5: acceptance record of the SuperEIO batch (100 attempts)
+  r5_deio_scores_*.csv                 round 5: DEIO runs scored, RTX 4090 batch and L40S batch (160 each)
+  r5_evidence/check_windows_*.log      round 5: per-window against whole-stream perturbation, windows of our layer
 
 Arms: "default" is the container default (TF32 override set), "no_tf32_override" is the override removed.
 Rules: A = DEIO's evaluation code (deio_rule), B = A with 20 ms matching (sim3_1000_20ms), C = B fitted on all
@@ -22,8 +26,10 @@ A crashed run counts as outside every tolerance.
 import collections
 import csv
 import glob
+import json
 import math
 import os
+import re
 import statistics
 import sys
 
@@ -340,6 +346,78 @@ ori = [r for r in one("crt_round4_*.csv") if r["crt_status"] == "ok" and float(r
 check("  orientation check (both arms, rule D within 10%): runs, median error, median offset spread (deg)",
       (len(ori), "%.1f" % statistics.median(float(r["aoe_median_deg_xyzw"]) for r in ori),
        "%.1f" % statistics.median(float(r["offset_spread_deg_xyzw"]) for r in ori)), (422, "76.5", "4.3"))
+
+print("\nRound 5: three readers of the same perturbed recordings (boxes_6dof, poster_6dof), RTX 4090")
+r5 = one("r5_eval_*.csv")
+fn = lambda v: float(v) if v not in ("", "None") else float("nan")  # noqa: E731
+check("runs / distinct run ids / per reader (DEIO own, DEIO ours, SuperEIO)",
+      (len(r5), len({r["run"] for r in r5}), tuple(sum(r["reader"] == k for r in r5) for k in ("deio_own", "deio_ours", "supereio"))),
+      (260, 260, (100, 60, 100)))
+check("excluded runs", sum(r["status"].startswith("excluded") for r in r5), 0)
+own = [r for r in r5 if r["reader"] == "deio_own"]
+check("DEIO own pipeline: completed / clean runs within 10% under rule D",
+      (sum(r["status"] == "completed" for r in own), "%d/%d" % (sum(fn(r["D"]) <= 10 for r in own if r["cond"] == "clean"),
+                                                                sum(r["cond"] == "clean" for r in own))), (100, "20/20"))
+st = [r for r in own if r["cond"] != "clean"]
+ac = [r for r in st if fn(r["A"]) <= 10 < fn(r["D"]) and fn(r["C"]) <= 10 < fn(r["D"])]
+check("  under stress: within 10% only under rules A and C / of the runs under stress / of them beyond the path length",
+      (len(ac), len(st), sum(fn(r["D"]) > 100 for r in ac)), (27, 80, 14))
+check("  under stress: within only under A but not C, or only under C but not A", sum((fn(r["A"]) <= 10) != (fn(r["C"]) <= 10) for r in st if fn(r["D"]) > 10), 0)
+check("  within 10% under rule D: IMU offset boxes / poster, noise boxes / poster",
+      tuple(sum(fn(r["D"]) <= 10 for r in own if r["cond"] == c and r["seq"] == q)
+            for c in ("imu15000us", "noise5hz") for q in ("boxes_6dof", "poster_6dof")), (2, 3, 7, 10))
+se = [r for r in r5 if r["reader"] == "supereio"]
+sdone = [r for r in se if r["status"] == "completed"]
+check("SuperEIO: completed / failed / undetermined", (len(sdone), sum(r["status"].startswith("failed") for r in se),
+                                                       sum(r["status"].startswith("undetermined") for r in se)), (76, 19, 5))
+check("  within 10% under rule C but not rule D, of the completed runs",
+      "%d/%d" % (sum(fn(r["C"]) <= 10 < fn(r["D"]) for r in sdone), len(sdone)), "15/76")
+check("  reduced event density: completed attempts of 20", sum(r["status"] == "completed" for r in se if r["cond"] == "keep0.1"), 0)
+check("  undetermined attempts all on poster_6dof", {r["seq"] for r in se if r["status"].startswith("undetermined")}, {"poster_6dof"})
+check("  undetermined with a trajectory, rule D in W (sensitivity only)",
+      sorted(("%.2f" if fn(r["D"]) < 10 else "%.1f") % fn(r["D"]) for r in se
+             if r["status"].startswith("undetermined") and fn(r["D"]) == fn(r["D"])), sorted(["0.62", "0.67", "1.79", "89.1"]))
+check("  within 10% under rule D: IMU offset boxes / poster, noise boxes / poster",
+      tuple(sum(fn(r["D"]) <= 10 for r in se if r["cond"] == c and r["seq"] == q and r["status"] == "completed")
+            for c in ("imu15000us", "noise5hz") for q in ("boxes_6dof", "poster_6dof")), (10, 7, 10, 2))
+worst = max((r for r in sdone if r["seq"] == "boxes_6dof" and r["cond"] == "clean"), key=lambda r: fn(r["D"]))
+check("  clean boxes_6dof run with the largest rule D error: rule C / rule D (%)", ("%.2f" % fn(worst["C"]), "%d" % round(fn(worst["D"]))), ("0.75", "265"))
+done = [r for r in r5 if r["status"] == "completed"]
+check("all readers: completed trajectories / within under C but not D / the reverse (C and, for DEIO, A)",
+      (len(done), sum(fn(r["C"]) <= 10 < fn(r["D"]) for r in done),
+       sum(fn(r["D"]) <= 10 < fn(r["C"]) for r in done) + sum(fn(r["D"]) <= 10 < fn(r["A"]) for r in done if r["reader"] != "supereio")),
+      (236, 75, 0))
+ours_tq = [r for r in r5 if r["reader"] == "deio_ours" and r["seq"] == "poster_6dof" and r["cond"] == "tq10000us"]
+mm_tq = [r for r in steps if r["arm"] == "no_tf32_override" and r["cell"] == "tq:10000" and r["scene"] == "rpgdavis/poster_6dof"]
+check("poster_6dof, timestamp quantization, our layer, beyond the path length: round 5 / main matrix",
+      ("%d/%d" % (sum(fn(r["D"]) > 100 for r in ours_tq), len(ours_tq)), "%d/%d" % (sum(float(r["se3_all"]) > 100 for r in mm_tq), len(mm_tq))),
+      ("1/10", "9/10"))
+side = json.load(open(sorted(glob.glob(os.path.join(REC, "r5_eval_*_readouts.json")))[0]))
+check("common window boxes / poster (s), readers that set it",
+      tuple("%.1f" % ((w["w1_us"] - w["w0_us"]) / 1e6) for w in (side["window"]["boxes_6dof"], side["window"]["poster_6dof"]))
+      + (sorted(side["window"]["boxes_6dof"]["readers"]),), ("57.7", "57.7", ["deio_ours", "deio_own", "supereio"]))
+acc = json.load(open(sorted(glob.glob(os.path.join(REC, "r5_supereio_main_*.json")))[0]))
+sc = acc["scheduling_check"]
+check("SuperEIO batch valid; scheduling check: checkpoints / median time-limited solves",
+      (acc["valid"], "%d/%d" % (sc["with_checkpoint_700"], sc["planned"]), sc["median"]), (True, "10/10", 38.5))
+check("  engines identical to the bias experiment's / distinct run folders",
+      (acc["engines_vs_bias_experiment"]["identical"], acc["distinct_run_folders"]), (True, 100))
+l40 = one("r5_deio_scores_*_132849.csv")
+r4090 = one("r5_deio_scores_*_152156.csv")
+check("DEIO runs scored: RTX 4090 batch / L40S batch (kept as a record)", (len(r4090), len(l40)), (160, 160))
+check("  RTX 4090 batch: the same runs as in r5_eval_*.csv", {r["run"] for r in r4090} == {r["run"] for r in r5 if r["reader"] != "supereio"}, True)
+pipes = one("davis_pipelines_scores_*.csv")
+bias = one("imu_bias_cross_system_pinned_*.csv")
+check("released records: DEIO runs / SuperEIO runs",
+      (len(allr) + len(pipes) + len(r4090) + len(l40), sum(r["system"] == "SuperEIO" for r in bias) + len(se)), (1772, 140))
+
+for seq, paper in (("boxes_6dof", "5.45"), ("poster_6dof", "5.72")):
+    log = open(sorted(glob.glob(os.path.join(REC, "r5_evidence", "check_windows_%s_*.log" % seq)))[0]).read()
+    m = re.search(r"tq 10000 us: of (\d+) events in a window before or after, (\d+) crossed to another window, "
+                  r"(\d+) left all windows, (\d+) entered one", log)
+    n, moved = int(m.group(1)), int(m.group(2)) + int(m.group(3)) + int(m.group(4))
+    check("%s: changed window membership, per-window vs whole-stream quantization (%% of events in a window)" % seq,
+          "%.2f" % (100.0 * moved / n), paper)
 
 print("\n%d quantities checked, %d mismatch%s%s" % (rows_checked, len(mismatches), "" if len(mismatches) == 1 else "es",
                                                    (": " + "; ".join(mismatches)) if mismatches else ""))
